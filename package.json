@@ -1,0 +1,23 @@
+{
+  "name": "verbheft",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Carnet de verbes allemands avec conjugaisons automatiques",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "german-verbs-dict": "^3.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.4",
+    "typescript": "~5.9",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.3"
+  }
+}
