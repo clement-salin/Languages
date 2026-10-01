@@ -73,3 +73,29 @@ Le moteur corrige plusieurs défauts de ces données :
 Le workflow `.github/workflows/deploy.yml` lance les tests et le build à chaque
 push. Sur `main`, il publie aussi le site sur GitHub Pages. À activer une seule
 fois : **Settings → Pages → Source : GitHub Actions**.
+
+### Sur le VPS Hetzner
+
+L'app est servie par un petit conteneur `caddy:2-alpine` (`deploy/`), sur le
+réseau Docker `web`, derrière le Caddy principal du serveur
+(`caddy-proxy-caddy-1`) qui gère le domaine et le HTTPS. Aucun port publié,
+rien à installer sur l'hôte.
+
+**Une seule fois :**
+
+1. Chez Cloudflare, enregistrement `A` `languages` → `46.225.70.60`, en **DNS
+   only** (nuage gris), sinon Caddy n'obtient pas de certificat.
+2. Premier envoi : `./scripts/deploy.sh` (le `curl` final échoue tant que
+   l'étape 3 n'est pas faite).
+3. Ajouter **à la fin** du Caddyfile du proxy, sans toucher au reste :
+
+   ```
+   languages.clementsalin.com {
+       reverse_proxy verbheft:80
+   }
+   ```
+
+   puis recharger sans interrompre les autres sites :
+   `docker exec caddy-proxy-caddy-1 caddy reload --config /etc/caddy/Caddyfile`.
+
+**Ensuite, à chaque mise à jour :** `./scripts/deploy.sh`.

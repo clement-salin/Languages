@@ -1,0 +1,18 @@
+# Caddy interne au conteneur verbheft : il ne fait que servir dist/.
+# Le HTTPS et le nom de domaine sont gérés par le Caddy principal du VPS
+# (caddy-proxy-caddy-1), qui relaie vers ce conteneur par le réseau `web`.
+:80 {
+	root * /srv
+	encode zstd gzip
+
+	# Fichiers nommés d'après leur contenu : cache permanent.
+	@hashed path /assets/*
+	header @hashed Cache-Control "public, max-age=31536000, immutable"
+
+	# index.html, sw.js, manifeste : toujours revalider, sinon les mises à
+	# jour n'arrivent jamais.
+	@other not path /assets/*
+	header @other Cache-Control "no-cache"
+
+	file_server
+}

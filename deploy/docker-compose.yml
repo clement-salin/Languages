@@ -1,0 +1,17 @@
+# Déployé dans /root/verbheft sur le VPS, à côté de dist/ et du Caddyfile.
+services:
+  verbheft:
+    # Même image que le proxy : déjà présente sur le serveur.
+    image: caddy:2-alpine
+    container_name: verbheft
+    restart: unless-stopped
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./dist:/srv:ro
+    networks:
+      - web
+    # Aucun port publié : le Caddy principal joint le conteneur par le réseau.
+
+networks:
+  web:
+    external: true
