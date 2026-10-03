@@ -15,7 +15,7 @@ Ce qui change par rapport à Verbheft : le conteneur `verbheft` ne faisait que s
 
 ## Bascule depuis Verbheft (une seule fois)
 
-> **Étapes 1 à 4 faites le 03/10/2026** : le VPS sert Languages, l'ancien conteneur `verbheft` est arrêté et `/root/verbheft` reste en place pour le retour en arrière. **Restent les étapes 5, 6 et 7.** La marche à suivre est gardée pour mémoire, et pour le retour en arrière.
+> **Étapes 1 à 4 faites le 03/10/2026** : le VPS sert Languages, l'ancien conteneur `verbheft` est arrêté et `/root/verbheft` reste en place pour le retour en arrière. **Étape 6 (déploiement par la CI) faite et vérifiée le même jour. Restent les étapes 5 et 7.** La marche à suivre est gardée pour mémoire, et pour le retour en arrière.
 >
 > Ce qui a coincé, à ne pas refaire : les étapes 3 et 4 ont été faites **avant** l'étape 2. Caddy pointait alors vers un conteneur `languages` qui n'existait pas encore, et le site a répondu 502 jusqu'au premier envoi. Puis le conteneur a refusé de démarrer : `.env` contenait le jeton seul, sans `SYNC_TOKEN=` devant (voir « En cas de problème »).
 
@@ -93,6 +93,8 @@ Commencer par l'appareil qui a le carnet le plus complet. Si les deux appareils 
 Sur iPhone, l'app installée sur l'écran d'accueil garde son propre stockage, distinct de Safari : c'est **dans l'app installée** qu'il faut ouvrir Languages pour que ses verbes soient repris.
 
 ### 6. Déploiement automatique (CI)
+
+> **Fait le 03/10/2026.** Vérifié en lançant le workflow à la main (Actions → Vérification et déploiement → Run workflow, sur `main`) : image construite, conteneur recréé, réponse 200.
 
 Une fois ceci fait, fusionner une PR sur `main` met en ligne tout seul. Tant que ce n'est pas fait, la CI vérifie et construit, puis saute le déploiement avec un avertissement.
 
