@@ -10,12 +10,20 @@
 
 export const TRANSLATE_ROUTE = '/api/translate';
 
-export type SourceLang = 'DE' | 'EN';
+export type Lang = 'DE' | 'EN' | 'FR';
 
 export interface TranslateRequest {
   text: string;
-  source: SourceLang;
+  source: Lang;
+  target: Lang;
 }
+
+/**
+ * Les sens de traduction utiles au carnet : allemand et anglais vers le
+ * français (proposer un sens), et français vers l'allemand (retrouver un
+ * verbe dont on ne connaît que la traduction).
+ */
+const PAIRS = new Set(['DE>FR', 'EN>FR', 'FR>DE']);
 
 export interface TranslateResult {
   status: number;
@@ -29,10 +37,12 @@ const MAX_LENGTH = 200;
 export function parseTranslateRequest(body: unknown): TranslateRequest | string {
   if (!body || typeof body !== 'object') return 'Corps de requête illisible.';
   const { text, source } = body as Record<string, unknown>;
-  if (source !== 'DE' && source !== 'EN') return 'Langue source inconnue.';
+  // Sans cible, le français : c'était le seul sens avant FR → DE.
+  const target = (body as Record<string, unknown>).target ?? 'FR';
+  if (!PAIRS.has(`${String(source)}>${String(target)}`)) return 'Sens de traduction non pris en charge.';
   if (typeof text !== 'string' || text.trim() === '') return 'Rien à traduire.';
   if (text.length > MAX_LENGTH) return `Texte trop long (${MAX_LENGTH} caractères au plus).`;
-  return { text: text.trim(), source };
+  return { text: text.trim(), source: source as Lang, target: target as Lang };
 }
 
 /** Les clés gratuites se terminent par « :fx » et ont leur propre adresse. */
@@ -56,7 +66,7 @@ export async function translate(
     response = await fetchImpl(deeplEndpoint(apiKey), {
       method: 'POST',
       headers: { authorization: `DeepL-Auth-Key ${apiKey}`, 'content-type': 'application/json' },
-      body: JSON.stringify({ text: [request.text], source_lang: request.source, target_lang: 'FR' }),
+      body: JSON.stringify({ text: [request.text], source_lang: request.source, target_lang: request.target }),
       signal: AbortSignal.timeout(10_000),
     });
   } catch {

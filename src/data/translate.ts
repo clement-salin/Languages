@@ -2,7 +2,7 @@
 
 import { readToken } from './sync';
 
-export type SourceLang = 'DE' | 'EN';
+export type Lang = 'DE' | 'EN' | 'FR';
 
 export class TranslateError extends Error {}
 
@@ -11,14 +11,14 @@ export function canTranslate(): boolean {
   return readToken() !== '';
 }
 
-export async function suggestTranslation(text: string, source: SourceLang): Promise<string> {
+export async function suggestTranslation(text: string, source: Lang, target: Lang = 'FR'): Promise<string> {
   if (!navigator.onLine) throw new TranslateError('Hors ligne : la suggestion demande le réseau.');
   let response: Response;
   try {
     response = await fetch('/api/translate', {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${readToken()}` },
-      body: JSON.stringify({ text, source }),
+      body: JSON.stringify({ text, source, target }),
     });
   } catch {
     throw new TranslateError('Serveur injoignable.');

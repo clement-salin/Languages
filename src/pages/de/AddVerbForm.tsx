@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CloseIcon } from '../../components/icons';
-import { TranslationSuggestion } from '../../components/TranslationSuggestion';
+import { TranslationSuggestion, type CheckedSuggestion } from '../../components/TranslationSuggestion';
+import { cleanGermanSuggestion } from '../../domain/de/suggestion';
 import { addVerb } from '../../data/de-verbs';
 import type { Lexicon } from '../../data/lexicon';
 import { verbPath } from './paths';
@@ -56,6 +57,14 @@ export function AddVerbForm({ lexicon, onClose }: { lexicon: Lexicon; onClose: (
     } else if (e.key === 'Escape') {
       setDismissed(true);
     }
+  }
+
+  /** Ne propose qu'un verbe du dictionnaire : c'est lui qui donnera la conjugaison. */
+  function checkGerman(raw: string): CheckedSuggestion {
+    const candidate = cleanGermanSuggestion(raw);
+    const result = lexicon.lookup(candidate);
+    if (!result.ok) return { value: raw, usable: false, note: 'absent du dictionnaire : pas un verbe connu' };
+    return { value: result.verb.reflexive ? `sich ${result.verb.infinitive}` : result.verb.infinitive, usable: true };
   }
 
   async function submit(e: FormEvent): Promise<void> {
@@ -144,7 +153,7 @@ export function AddVerbForm({ lexicon, onClose }: { lexicon: Lexicon; onClose: (
           type="text"
           value={translation}
           onChange={(e) => setTranslation(e.target.value)}
-          placeholder="Traduction (facultatif)"
+          placeholder="Traduction (ou le verbe en français)"
           enterKeyHint="done"
           className="h-11 flex-1 rounded-[10px] border border-line-strong bg-surface px-3 text-base"
         />
@@ -153,7 +162,23 @@ export function AddVerbForm({ lexicon, onClose }: { lexicon: Lexicon; onClose: (
         </button>
       </div>
       <div className="mt-2">
-        <TranslationSuggestion text={verb.trim()} source="DE" onUse={setTranslation} />
+        {verb.trim() !== '' || translation.trim() === '' ? (
+          <TranslationSuggestion text={verb.trim()} source="DE" onUse={setTranslation} />
+        ) : (
+          // Seule la traduction est remplie : on cherche le verbe allemand.
+          <TranslationSuggestion
+            text={translation.trim()}
+            source="FR"
+            target="DE"
+            label="Trouver le verbe allemand (DeepL)"
+            check={checkGerman}
+            onUse={(value) => {
+              setVerb(value);
+              setOptions([]);
+              setUnknown(null);
+            }}
+          />
+        )}
       </div>
       {unknown && (
         <div role="alert" className="mt-3 text-sm">

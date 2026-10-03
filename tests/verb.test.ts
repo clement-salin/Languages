@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { cleanGermanSuggestion } from '../src/domain/de/suggestion';
 import { lookupVerb } from '../src/domain/de/verb';
 import { conj, dict, forms, parts } from './helpers';
 
@@ -158,4 +159,18 @@ it('conjugue tout le dictionnaire sans erreur', () => {
   }
   // Quelques entrées du dictionnaire source sont lacunaires.
   expect(incomplete).toBeLessThan(60);
+});
+
+describe('verbe proposé depuis le français', () => {
+  it('ramène la proposition à un infinitif cherchable', () => {
+    expect(cleanGermanSuggestion(' Fahren. ')).toBe('Fahren');
+    expect(cleanGermanSuggestion('zu fahren')).toBe('fahren');
+    expect(cleanGermanSuggestion('„sich zu freuen“')).toBe('sich freuen');
+  });
+
+  it('se retrouve ensuite dans le dictionnaire, nom compris', () => {
+    for (const raw of ['Fahren', 'zu fahren', 'sich freuen', 'anrufen']) {
+      expect(lookupVerb(dict, cleanGermanSuggestion(raw)).ok).toBe(true);
+    }
+  });
 });

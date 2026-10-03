@@ -1,8 +1,18 @@
 import { useEffect, useState } from 'react';
-import { canTranslate, suggestTranslation, TranslateError, type SourceLang } from '../data/translate';
+import { canTranslate, suggestTranslation, TranslateError, type Lang } from '../data/translate';
+
+/** Ce que l'appelant fait d'une traduction brute avant de la proposer. */
+export interface CheckedSuggestion {
+  /** Valeur proposée (éventuellement remise en forme). */
+  value: string;
+  /** Faux si la proposition ne peut pas être retenue telle quelle. */
+  usable: boolean;
+  /** Précision affichée à côté (« absent du dictionnaire »…). */
+  note?: string;
+}
 
 /**
- * Propose une traduction DeepL sous un champ « sens » ou « traduction ».
+ * Propose une traduction DeepL à côté d'un champ.
  *
  * **Une proposition, jamais un remplissage** : la traduction s'affiche avec
  * un bouton « Utiliser » ; rien n'entre dans le champ sans ce geste. Une
@@ -11,14 +21,28 @@ import { canTranslate, suggestTranslation, TranslateError, type SourceLang } fro
  * Absent sur un appareil sans jeton de synchronisation : le bouton ne
  * pourrait qu'échouer.
  */
-export function TranslationSuggestion({ text, source, onUse }: {
+export function TranslationSuggestion({
+  text,
+  source,
+  target = 'FR',
+  label = 'Suggérer une traduction (DeepL)',
+  check,
+  onUse,
+}: {
   /** Ce qu'il faut traduire ; vide tant que la saisie ne permet rien. */
   text: string;
-  source: SourceLang;
-  onUse: (translation: string) => void;
+  source: Lang;
+  target?: Lang;
+  label?: string;
+  /** Vérifie et remet en forme la traduction avant de la proposer. */
+  check?: (translation: string) => CheckedSuggestion;
+  onUse: (value: string) => void;
 }) {
   const [state, setState] = useState<
-    { kind: 'idle' } | { kind: 'loading' } | { kind: 'done'; for: string; translation: string } | { kind: 'error'; message: string }
+    | { kind: 'idle' }
+    | { kind: 'loading' }
+    | { kind: 'done'; for: string; suggestion: CheckedSuggestion }
+    | { kind: 'error'; message: string }
   >({ kind: 'idle' });
 
   // Une suggestion faite pour un autre texte n'a plus cours.
@@ -31,7 +55,8 @@ export function TranslationSuggestion({ text, source, onUse }: {
   async function ask(): Promise<void> {
     setState({ kind: 'loading' });
     try {
-      setState({ kind: 'done', for: text, translation: await suggestTranslation(text, source) });
+      const raw = await suggestTranslation(text, source, target);
+      setState({ kind: 'done', for: text, suggestion: check ? check(raw) : { value: raw, usable: true } });
     } catch (error) {
       setState({ kind: 'error', message: error instanceof TranslateError ? error.message : 'Suggestion impossible.' });
     }
@@ -42,17 +67,20 @@ export function TranslationSuggestion({ text, source, onUse }: {
       {state.kind === 'done' ? (
         <>
           <span className="text-ink-soft">DeepL propose :</span>
-          <span className="font-medium text-ink-2">« {state.translation} »</span>
-          <button
-            type="button"
-            onClick={() => {
-              onUse(state.translation);
-              setState({ kind: 'idle' });
-            }}
-            className="min-h-9 cursor-pointer rounded-lg border border-line-strong bg-surface px-3 text-accent-text"
-          >
-            Utiliser
-          </button>
+          <span lang={target.toLowerCase()} className="font-medium text-ink-2">« {state.suggestion.value} »</span>
+          {state.suggestion.note && <span className="text-warn">{state.suggestion.note}</span>}
+          {state.suggestion.usable && (
+            <button
+              type="button"
+              onClick={() => {
+                onUse(state.suggestion.value);
+                setState({ kind: 'idle' });
+              }}
+              className="min-h-9 cursor-pointer rounded-lg border border-line-strong bg-surface px-3 text-accent-text"
+            >
+              Utiliser
+            </button>
+          )}
         </>
       ) : (
         <button
@@ -61,7 +89,7 @@ export function TranslationSuggestion({ text, source, onUse }: {
           onClick={() => void ask()}
           className="min-h-9 cursor-pointer rounded-lg border-0 bg-transparent px-0 text-accent-text underline-offset-2 hover:underline disabled:cursor-default disabled:text-ink-faint disabled:no-underline"
         >
-          {state.kind === 'loading' ? 'Traduction…' : 'Suggérer une traduction (DeepL)'}
+          {state.kind === 'loading' ? 'Traduction…' : label}
         </button>
       )}
       {state.kind === 'error' && <span role="alert" className="text-warn">{state.message}</span>}

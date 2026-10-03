@@ -11,11 +11,14 @@ function fakeFetch(status: number, body: unknown, seen: { url?: string; init?: R
 
 describe('requête de traduction', () => {
   it('accepte un texte allemand ou anglais', () => {
-    expect(parseTranslateRequest({ text: ' to sit up ', source: 'EN' })).toEqual({ text: 'to sit up', source: 'EN' });
+    expect(parseTranslateRequest({ text: ' to sit up ', source: 'EN' })).toEqual({ text: 'to sit up', source: 'EN', target: 'FR' });
+    expect(parseTranslateRequest({ text: 'conduire', source: 'FR', target: 'DE' })).toEqual({ text: 'conduire', source: 'FR', target: 'DE' });
   });
 
   it('refuse le reste', () => {
     expect(parseTranslateRequest({ text: 'x', source: 'IT' })).toBeTypeOf('string');
+    expect(parseTranslateRequest({ text: 'x', source: 'FR', target: 'EN' })).toBeTypeOf('string');
+    expect(parseTranslateRequest({ text: 'x', source: 'DE', target: 'DE' })).toBeTypeOf('string');
     expect(parseTranslateRequest({ text: '   ', source: 'DE' })).toBeTypeOf('string');
     expect(parseTranslateRequest({ text: 'a'.repeat(201), source: 'DE' })).toBeTypeOf('string');
     expect(parseTranslateRequest(null)).toBeTypeOf('string');
@@ -31,7 +34,7 @@ describe('appel à DeepL', () => {
   it('envoie la clé en en-tête et rend la traduction', async () => {
     const seen: { url?: string; init?: RequestInit } = {};
     const result = await translate(
-      { text: 'fahren', source: 'DE' },
+      { text: 'fahren', source: 'DE', target: 'FR' },
       'secret:fx',
       fakeFetch(200, { translations: [{ text: 'conduire' }] }, seen),
     );
@@ -41,14 +44,14 @@ describe('appel à DeepL', () => {
   });
 
   it('dit clairement quand elle n’est pas configurée ou que le quota est atteint', async () => {
-    expect((await translate({ text: 'x', source: 'EN' }, '')).status).toBe(503);
-    const quota = await translate({ text: 'x', source: 'EN' }, 'k', fakeFetch(456, {}));
+    expect((await translate({ text: 'x', source: 'EN', target: 'FR' }, '')).status).toBe(503);
+    const quota = await translate({ text: 'x', source: 'EN', target: 'FR' }, 'k', fakeFetch(456, {}));
     expect(quota).toEqual({ status: 429, body: { error: 'Quota DeepL du mois atteint.' } });
-    expect((await translate({ text: 'x', source: 'EN' }, 'k', fakeFetch(403, {}))).status).toBe(502);
+    expect((await translate({ text: 'x', source: 'EN', target: 'FR' }, 'k', fakeFetch(403, {}))).status).toBe(502);
   });
 
   it('ne rend pas une traduction vide', async () => {
-    const result = await translate({ text: 'x', source: 'EN' }, 'k', fakeFetch(200, { translations: [] }));
+    const result = await translate({ text: 'x', source: 'EN', target: 'FR' }, 'k', fakeFetch(200, { translations: [] }));
     expect(result.status).toBe(502);
   });
 });
