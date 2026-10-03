@@ -13,6 +13,7 @@ import { stat } from 'node:fs/promises';
 import { timingSafeEqual } from 'node:crypto';
 import { extname, join, normalize, resolve } from 'node:path';
 import { defaultDatabaseFile, openSyncStore, type SyncStore } from './sync-store.ts';
+import { parseTranslateRequest, translate, TRANSLATE_ROUTE } from './translate.ts';
 import type { SyncRequest } from '../src/domain/sync.ts';
 
 const PORT = Number(process.env['PORT'] ?? 8080);
@@ -26,6 +27,9 @@ const ROOT = resolve(process.env['STATIC_DIR'] ?? 'dist');
  */
 const SYNC_TOKEN = process.env['SYNC_TOKEN'] ?? '';
 const MAX_BODY = 8_000_000;
+
+/** Clé DeepL, facultative : sans elle, seule la suggestion de traduction est éteinte. */
+const DEEPL_API_KEY = process.env['DEEPL_API_KEY'] ?? '';
 
 let store: SyncStore | undefined;
 function syncStore(): SyncStore {
@@ -139,6 +143,39 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
     return;
   }
 
+  /*
+   * Traduction : réservée au porteur du jeton, comme la synchronisation.
+   * Ouverte à tous, elle ferait de ce serveur un relais gratuit vers DeepL,
+   * aux frais du quota de la clé.
+   */
+  if (url.pathname === TRANSLATE_ROUTE) {
+    if (req.method !== 'POST') {
+      sendJson(res, 405, { error: 'Méthode non autorisée.' });
+      return;
+    }
+    if (SYNC_TOKEN === '') {
+      sendJson(res, 503, { error: "Ce serveur n'est pas configuré (SYNC_TOKEN absent)." });
+      return;
+    }
+    if (!tokenMatches(req.headers.authorization)) {
+      sendJson(res, 401, { error: 'Jeton invalide.' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = parseTranslateRequest(await readJson(req));
+    } catch {
+      parsed = 'Corps de requête illisible.';
+    }
+    if (typeof parsed === 'string') {
+      sendJson(res, 400, { error: parsed });
+      return;
+    }
+    const result = await translate(parsed, DEEPL_API_KEY);
+    sendJson(res, result.status, result.body);
+    return;
+  }
+
   if (url.pathname.startsWith('/api/')) {
     sendJson(res, 404, { error: 'Route inconnue.' });
     return;
@@ -174,4 +211,5 @@ createServer((req, res) => {
 }).listen(PORT, HOST, () => {
   console.log(`Languages : http://${HOST}:${PORT} (fichiers servis depuis ${ROOT})`);
   if (SYNC_TOKEN === '') console.log('[sync] SYNC_TOKEN absent : synchronisation désactivée.');
+  if (DEEPL_API_KEY === '') console.log('[traduction] DEEPL_API_KEY absent : suggestions de traduction désactivées.');
 });

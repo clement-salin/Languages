@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { FloatingAction } from '../../components/FloatingAction';
 import { CloseIcon } from '../../components/icons';
+import { TranslationSuggestion } from '../../components/TranslationSuggestion';
 import { HeaderAction, PageHeader, SearchField } from '../../components/PageHeader';
 import { addExpression, enExpressions, updateExpression } from '../../data/en-expressions';
 import { useCollection } from '../../data/hooks';
-import { expressionId, type Expression } from '../../domain/en/expression';
+import { cleanExpression, expressionId, type Expression } from '../../domain/en/expression';
 import { fold, plural } from '../../domain/text';
 import { EntryCard } from './EntryCard';
 
@@ -106,6 +107,7 @@ function ExpressionCard({ expression, highlighted }: { expression: Expression; h
       <EntryCard
         id={expression.id}
         title={expression.text}
+        translate={expression.text}
         fields={expression}
         onUpdate={(patch) => void updateExpression(expression.id, patch)}
         onRemove={() => {
@@ -178,6 +180,7 @@ function AddExpressionForm({ existing, onClose, onDone }: {
         <div className="flex flex-col gap-1">
           <label htmlFor="expression-meaning" className="text-sm text-ink-3">Sens en français</label>
           <input id="expression-meaning" value={meaning} onChange={(e) => setMeaning(e.target.value)} placeholder="briser la glace" className={field} />
+          <TranslationSuggestion text={cleanExpression(text)} source="EN" onUse={setMeaning} />
         </div>
         <div className="flex flex-col gap-1 lg:col-span-2">
           <label htmlFor="expression-example" className="text-sm text-ink-3">Exemple (facultatif)</label>
