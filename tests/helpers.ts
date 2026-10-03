@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { prepareDictionary } from '../src/core/overrides';
-import type { Dictionary } from '../src/core/types';
-import { conjugate, lookupVerb, type Conjugation, type ConjugationOptions } from '../src/core/verb';
+import { prepareDictionary } from '../src/domain/de/overrides';
+import type { Dictionary } from '../src/domain/de/types';
+import { conjugate, lookupVerb, type Conjugation, type ConjugationOptions } from '../src/domain/de/verb';
 
 const require = createRequire(import.meta.url);
 

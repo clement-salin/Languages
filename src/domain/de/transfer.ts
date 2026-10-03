@@ -1,16 +1,7 @@
-import { normalizeSavedVerb, type SavedVerb } from './storage';
-
-/** Sauvegarde complète du carnet (réimportable). */
-export function toJson(verbs: SavedVerb[]): string {
-  return JSON.stringify(
-    { app: 'verbheft', version: 1, exportedAt: new Date().toISOString(), verbs },
-    null,
-    2,
-  );
-}
+import { normalizeSavedVerb, type SavedVerb } from './saved-verb';
 
 export interface CsvRow {
-  verb: SavedVerb;
+  verb: Pick<SavedVerb, 'id' | 'translation' | 'notes' | 'addedAt'>;
   principalParts: string;
   verbClass: string;
   auxiliary: string;

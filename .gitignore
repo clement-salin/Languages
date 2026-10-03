@@ -1,4 +1,7 @@
 node_modules
 dist
+dist-server
+# Base SQLite du serveur en développement (barre de tête : pas src/data/).
+/data/
 *.log
 .DS_Store

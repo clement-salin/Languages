@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { levenshtein, VerbIndex } from '../src/core/search';
-import { parseImport, toCsv } from '../src/transfer';
+import { levenshtein, VerbIndex } from '../src/domain/de/search';
+import { parseImport, toCsv } from '../src/domain/de/transfer';
 import { dict } from './helpers';
 
 describe('recherche', () => {

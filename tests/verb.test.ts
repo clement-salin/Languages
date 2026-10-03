@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { lookupVerb } from '../src/core/verb';
+import { lookupVerb } from '../src/domain/de/verb';
 import { conj, dict, forms, parts } from './helpers';
 
 describe('formes principales', () => {
