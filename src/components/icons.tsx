@@ -56,3 +56,6 @@ export const SettingsIcon = (p: IconProps) => (
 export const QuoteIcon = (p: IconProps) => (
   <Icon {...p}><path d="M4 5h16v11H9l-5 4z" /><path d="M9 9.5h6M9 12.5h4" /></Icon>
 );
+export const FilterIcon = (p: IconProps) => (
+  <Icon {...p}><path d="M4 6h16M7 12h10M10 18h4" /></Icon>
+);

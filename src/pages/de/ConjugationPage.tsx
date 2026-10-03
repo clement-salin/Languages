@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { FloatingAction } from '../../components/FloatingAction';
+import { FilterIcon } from '../../components/icons';
 import { HeaderAction, PageHeader, SearchField } from '../../components/PageHeader';
 import { deVerbs } from '../../data/de-verbs';
 import { useCollection, useLexicon } from '../../data/hooks';
@@ -89,7 +90,10 @@ export function ConjugationPage() {
             : undefined}
           actions={
             <>
-              <SearchField value={query} onChange={setQuery} label="Rechercher dans le carnet" placeholder="Rechercher un verbe ou une traduction" />
+              <div className="flex min-w-0 flex-1 gap-2 lg:flex-none">
+                <SearchField value={query} onChange={setQuery} label="Rechercher dans le carnet" placeholder="Rechercher un verbe ou une traduction" />
+                <FilterMenu filter={filter} sort={sort} onFilter={setFilter} onSort={setSort} />
+              </div>
               <HeaderAction label="Ajouter un verbe" onClick={() => setAdding(true)} />
             </>
           }
@@ -102,34 +106,14 @@ export function ConjugationPage() {
           aria-label="Verbes du carnet"
           className={`flex w-full flex-col gap-3 lg:w-[340px] lg:shrink-0 ${verbId !== undefined ? 'hidden lg:flex' : ''}`}
         >
-          <div className="flex flex-wrap items-center gap-1.5">
-            <div role="group" aria-label="Filtrer" className="flex flex-wrap gap-1.5">
-              {FILTERS.map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={filter === value}
-                  onClick={() => setFilter(value)}
-                  className={`h-8 cursor-pointer rounded-full border px-3 text-[13px] ${
-                    filter === value ? 'border-ink bg-ink text-white' : 'border-line-strong bg-surface text-ink-2'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <label className="sr-only" htmlFor="verb-sort">Trier</label>
-            <select
-              id="verb-sort"
-              value={sort}
-              onChange={(e) => setSort(e.target.value as SortOrder)}
-              className="h-8 rounded-full border border-line-strong bg-surface px-2 text-[13px] text-ink-2"
-            >
-              <option value="recent">Plus récents</option>
-              <option value="oldest">Plus anciens</option>
-              <option value="alpha">A → Z</option>
-            </select>
-          </div>
+          {filter !== 'all' && (
+            <p className="m-0 flex items-center gap-2 text-sm text-ink-3">
+              Filtre : <strong className="font-medium text-ink-2">{FILTERS.find(([v]) => v === filter)?.[1]}</strong>
+              <button type="button" onClick={() => setFilter('all')} className="cursor-pointer border-0 bg-transparent p-0 text-accent-text underline">
+                Effacer
+              </button>
+            </p>
+          )}
           <VerbList rows={rows} empty={verbs?.length === 0} selectedId={verbId} />
         </section>
 
@@ -148,6 +132,93 @@ export function ConjugationPage() {
 
       {verbId === undefined && <FloatingAction label="Ajouter un verbe" onClick={() => setAdding(true)} />}
     </>
+  );
+}
+
+/**
+ * Filtres et tri, repliés derrière un picto à droite de la recherche.
+ * Un point signale qu'un réglage autre que celui par défaut est actif :
+ * sans lui, une liste raccourcie par un filtre oublié paraîtrait incomplète.
+ */
+function FilterMenu({ filter, sort, onFilter, onSort }: {
+  filter: Filter;
+  sort: SortOrder;
+  onFilter: (value: Filter) => void;
+  onSort: (value: SortOrder) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const active = (filter !== 'all' ? 1 : 0) + (sort !== 'recent' ? 1 : 0);
+
+  // Se referme au clic ailleurs et à Échap.
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (e: PointerEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointer);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onPointer);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative shrink-0">
+      <button
+        type="button"
+        aria-label={active ? `Filtrer et trier (${active} réglage${active > 1 ? 's' : ''} actif${active > 1 ? 's' : ''})` : 'Filtrer et trier'}
+        aria-expanded={open}
+        aria-controls="verb-filter-menu"
+        onClick={() => setOpen((o) => !o)}
+        className={`relative flex size-11 cursor-pointer items-center justify-center rounded-[10px] border lg:size-10 ${
+          open ? 'border-ink bg-ink text-white' : 'border-line-strong bg-surface text-ink-3'
+        }`}
+      >
+        <FilterIcon size={18} />
+        {active > 0 && !open && (
+          <span aria-hidden="true" className="absolute top-1.5 right-1.5 size-2 rounded-full bg-accent" />
+        )}
+      </button>
+      {open && (
+        <div
+          id="verb-filter-menu"
+          className="absolute top-12 right-0 z-30 flex w-72 flex-col gap-3 rounded-[14px] border border-line bg-surface p-4 shadow-lg"
+        >
+          <div role="group" aria-label="Filtrer" className="flex flex-wrap gap-1.5">
+            {FILTERS.map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={filter === value}
+                onClick={() => onFilter(value)}
+                className={`h-9 cursor-pointer rounded-full border px-3 text-[13px] ${
+                  filter === value ? 'border-ink bg-ink text-white' : 'border-line-strong bg-surface text-ink-2'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <label className="flex items-center justify-between gap-3 text-sm text-ink-3">
+            Trier
+            <select
+              value={sort}
+              onChange={(e) => onSort(e.target.value as SortOrder)}
+              className="h-9 rounded-full border border-line-strong bg-surface px-2 text-[13px] text-ink-2"
+            >
+              <option value="recent">Plus récents</option>
+              <option value="oldest">Plus anciens</option>
+              <option value="alpha">A → Z</option>
+            </select>
+          </label>
+        </div>
+      )}
+    </div>
   );
 }
 
