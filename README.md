@@ -43,9 +43,10 @@ et l'exemple ; tri par date d'ajout ou alphabétique.
 
 Un bouton « Suggérer une traduction (DeepL) » sous les champs de traduction et
 de sens propose une traduction en français ; elle ne remplit le champ que si
-tu cliques sur « Utiliser ». Dans l'autre sens, pour l'allemand : tape le verbe
-en français dans le champ traduction, et « Trouver le verbe allemand » propose
-l'infinitif allemand, à condition qu'il soit dans le dictionnaire. Demande le réseau, le jeton de synchronisation et
+tu cliques sur « Utiliser ». Dans l'autre sens, pour l'allemand : le formulaire
+d'ajout n'a qu'un champ ; tape un verbe allemand, ou directement le verbe en
+français (« manger ») et l'app propose d'elle-même « essen », à condition qu'il
+soit dans le dictionnaire. Le mot français devient la traduction. Demande le réseau, le jeton de synchronisation et
 une clé DeepL sur le serveur (`docs/deploiement.md`).
 
 ## Synchronisation et sauvegarde
