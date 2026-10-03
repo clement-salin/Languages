@@ -1,3 +1,4 @@
+import { normalizeExpression, type Expression } from './en/expression';
 import { normalizePhrasal, type PhrasalVerb } from './en/phrasal';
 import type { SavedVerb } from './de/saved-verb';
 
@@ -8,23 +9,45 @@ import type { SavedVerb } from './de/saved-verb';
  * sauvegardes de Verbheft : un ancien fichier se réimporte donc tel quel, et
  * un nouveau reste lisible par `parseImport` (src/domain/de/transfer.ts).
  */
-export function toBackupJson(deVerbs: SavedVerb[], enPhrasals: PhrasalVerb[], now = new Date()): string {
+export function toBackupJson(
+  deVerbs: SavedVerb[],
+  enPhrasals: PhrasalVerb[],
+  enExpressions: Expression[],
+  now = new Date(),
+): string {
   return JSON.stringify(
-    { app: 'languages', version: 2, exportedAt: now.toISOString(), verbs: deVerbs, phrasals: enPhrasals },
+    {
+      app: 'languages',
+      version: 3,
+      exportedAt: now.toISOString(),
+      verbs: deVerbs,
+      phrasals: enPhrasals,
+      expressions: enExpressions,
+    },
     null,
     2,
   );
 }
 
-/** Expressions anglaises d'une sauvegarde JSON ; liste vide pour tout autre fichier. */
-export function phrasalsFromBackup(text: string): PhrasalVerb[] {
-  let data: unknown;
+/** Liste lue sous `key` dans une sauvegarde JSON ; vide pour tout autre fichier. */
+function listFromBackup(text: string, key: string): unknown[] {
   try {
-    data = JSON.parse(text.replace(/^﻿/, ''));
+    const data: unknown = JSON.parse(text.replace(/^﻿/, ''));
+    const list = (data as Record<string, unknown> | null)?.[key];
+    return Array.isArray(list) ? list : [];
   } catch {
     return [];
   }
-  const list = (data as { phrasals?: unknown } | null)?.phrasals;
-  if (!Array.isArray(list)) return [];
-  return list.map((item) => normalizePhrasal(item)).filter((p): p is PhrasalVerb => p !== null);
+}
+
+export function phrasalsFromBackup(text: string): PhrasalVerb[] {
+  return listFromBackup(text, 'phrasals')
+    .map((item) => normalizePhrasal(item))
+    .filter((p): p is PhrasalVerb => p !== null);
+}
+
+export function expressionsFromBackup(text: string): Expression[] {
+  return listFromBackup(text, 'expressions')
+    .map((item) => normalizeExpression(item))
+    .filter((e): e is Expression => e !== null);
 }

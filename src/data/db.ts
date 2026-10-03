@@ -11,6 +11,7 @@
 
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { SavedVerb } from '../domain/de/saved-verb';
+import type { Expression } from '../domain/en/expression';
 import type { PhrasalVerb } from '../domain/en/phrasal';
 import type { SyncableCollection, Tombstone } from '../domain/sync';
 
@@ -22,6 +23,7 @@ import type { SyncableCollection, Tombstone } from '../domain/sync';
 export const TOMBSTONE_STORES = {
   deVerbs: 'deVerbTombstones',
   enPhrasals: 'enPhrasalTombstones',
+  enExpressions: 'enExpressionTombstones',
 } as const satisfies Record<SyncableCollection, string>;
 
 export interface SyncMeta {
@@ -42,12 +44,14 @@ interface LanguagesDB extends DBSchema {
   deVerbTombstones: { key: string; value: Tombstone };
   enPhrasals: { key: string; value: PhrasalVerb };
   enPhrasalTombstones: { key: string; value: Tombstone };
+  enExpressions: { key: string; value: Expression };
+  enExpressionTombstones: { key: string; value: Tombstone };
   meta: { key: string; value: SyncMeta | MigrationMeta };
 }
 
 export type Database = IDBPDatabase<LanguagesDB>;
 
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 let dbName = 'languages';
 let dbPromise: Promise<Database> | undefined;
 
@@ -60,6 +64,12 @@ export function db(): Promise<Database> {
         database.createObjectStore('enPhrasals', { keyPath: 'id' });
         database.createObjectStore('enPhrasalTombstones', { keyPath: 'id' });
         database.createObjectStore('meta', { keyPath: 'key' });
+      }
+      if (oldVersion < 2) {
+        // Expressions anglaises (03/10/2026). Un appareil qui monte de
+        // version redemande tout au serveur une fois (`requestSince`).
+        database.createObjectStore('enExpressions', { keyPath: 'id' });
+        database.createObjectStore('enExpressionTombstones', { keyPath: 'id' });
       }
     },
   });

@@ -3,13 +3,13 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { FloatingAction } from '../../components/FloatingAction';
 import { BackIcon, ChevronIcon } from '../../components/icons';
 import { HeaderAction, PageHeader, SearchField } from '../../components/PageHeader';
-import { enPhrasals } from '../../data/en-phrasals';
+import { enPhrasals, updatePhrasal } from '../../data/en-phrasals';
 import { useCollection } from '../../data/hooks';
 import { irregularForms } from '../../domain/en/irregular';
 import { groupPhrasals, type GroupMode, type PhrasalGroup, type PhrasalVerb } from '../../domain/en/phrasal';
 import { fold, plural } from '../../domain/text';
 import { AddPhrasalForm } from './AddPhrasalForm';
-import { PhrasalCard } from './PhrasalCard';
+import { EntryCard } from './EntryCard';
 import { groupPath, modeFromSegment, rememberedMode, rememberMode } from './paths';
 
 let rememberedQuery = '';
@@ -97,7 +97,7 @@ export function PhrasalPage() {
           )}
         </section>
 
-        <div className={`min-w-0 flex-1 ${selectedKey === undefined ? 'hidden lg:block' : 'pt-[max(1rem,env(safe-area-inset-top))] lg:pt-0'}`}>
+        <div className={`min-w-0 flex-1 ${selectedKey === undefined ? 'hidden lg:block' : 'pt-[max(1rem,var(--page-top))] lg:pt-0'}`}>
           {selectedKey === undefined ? (
             <div className="flex min-h-80 items-center justify-center rounded-[14px] border border-dashed border-line-strong p-8 text-center text-ink-soft">
               {mode === 'verb' ? 'Choisis un verbe pour voir ses phrasal verbs.' : 'Choisis une particule pour voir les verbes qui la prennent.'}
@@ -233,7 +233,18 @@ function GroupPanel({ group, mode }: { group: PhrasalGroup; mode: GroupMode }) {
         )}
       </header>
       <div className="grid gap-3 xl:grid-cols-2">
-        {group.items.map((p) => <PhrasalCard key={p.id} phrasal={p} />)}
+        {group.items.map((p) => (
+          <EntryCard
+            key={p.id}
+            id={p.id}
+            title={<>{p.base} <span className="font-semibold text-accent-text">{p.particle}</span></>}
+            fields={p}
+            onUpdate={(patch) => void updatePhrasal(p.id, patch)}
+            onRemove={() => {
+              if (confirm(`Supprimer « ${p.id} » du carnet ?`)) void enPhrasals.remove(p.id);
+            }}
+          />
+        ))}
       </div>
     </article>
   );

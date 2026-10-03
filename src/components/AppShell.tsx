@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { deVerbs } from '../data/de-verbs';
-import { enPhrasals } from '../data/en-phrasals';
 import { useCollection, useSyncState } from '../data/hooks';
+import { REPOSITORIES } from '../data/repositories';
 import { readToken } from '../data/sync';
 import { LANG_LABELS, langFromPath, rememberPath, type Lang } from '../language';
 import { registerServiceWorker } from '../pwa';
-import { BranchIcon, SettingsIcon, SyncIcon, TableIcon } from './icons';
+import { SettingsIcon, SyncIcon } from './icons';
 import { LanguageSwitch } from './LanguageSwitch';
+import { SECTIONS, type Section } from './sections';
 import { UpdateBanner } from './UpdateBanner';
 
 /**
@@ -22,6 +22,7 @@ import { UpdateBanner } from './UpdateBanner';
 export function AppShell() {
   const { pathname } = useLocation();
   const lang = langFromPath(pathname);
+  const tabs = lang && SECTIONS[lang].length >= 2 ? SECTIONS[lang] : null;
   const [updateReady, setUpdateReady] = useState(false);
 
   useEffect(() => registerServiceWorker(() => setUpdateReady(true)), []);
@@ -48,7 +49,12 @@ export function AppShell() {
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 pb-[calc(var(--lang-bar-height)+5.5rem)] lg:pb-0">
+      <main
+        className={`min-w-0 flex-1 pb-[calc(var(--lang-bar-height)+5.5rem)] lg:pb-0 ${
+          tabs ? 'max-lg:[--page-top:0px]' : ''
+        }`}
+      >
+        {tabs && <SectionTabs sections={tabs} pathname={pathname} />}
         <Outlet />
       </main>
 
@@ -61,37 +67,64 @@ export function AppShell() {
   );
 }
 
-const SECTIONS: Record<Lang, { to: string; label: string; icon: typeof TableIcon; count: 'de' | 'en' }[]> = {
-  de: [{ to: '/de', label: 'Conjugaison', icon: TableIcon, count: 'de' }],
-  en: [{ to: '/en', label: 'Phrasal verbs', icon: BranchIcon, count: 'en' }],
-};
-
 function SectionNav({ lang }: { lang: Lang }) {
-  const verbs = useCollection(deVerbs, 'deVerbs');
-  const phrasals = useCollection(enPhrasals, 'enPhrasals');
-  const counts = { de: verbs?.length, en: phrasals?.length };
+  const { pathname } = useLocation();
   return (
     <nav aria-label={LANG_LABELS[lang].french} className="flex flex-col gap-1">
       <div className="px-2 pb-1.5 text-[11px] font-semibold tracking-[0.08em] text-ink-soft uppercase">
         {LANG_LABELS[lang].french}
       </div>
-      {SECTIONS[lang].map(({ to, label, icon: SectionIcon, count }) => (
-        <NavLink
-          key={to}
-          to={to}
-          className={({ isActive }) =>
-            `flex h-10 items-center justify-between rounded-lg px-2.5 text-sm no-underline ${
-              isActive ? 'bg-accent-soft font-semibold text-accent-text' : 'text-ink-3 hover:bg-chip'
-            }`
-          }
-        >
-          <span className="flex items-center gap-2.5">
-            <SectionIcon />
-            {label}
-          </span>
-          {counts[count] !== undefined && <span className="text-xs font-medium">{counts[count]}</span>}
-        </NavLink>
+      {SECTIONS[lang].map((section) => (
+        <SectionLink key={section.to} section={section} active={section.matches(pathname)} />
       ))}
+    </nav>
+  );
+}
+
+function SectionLink({ section, active }: { section: Section; active: boolean }) {
+  const items = useCollection(REPOSITORIES[section.collection], section.collection);
+  const SectionIcon = section.icon;
+  return (
+    <Link
+      to={section.to}
+      aria-current={active ? 'page' : undefined}
+      className={`flex h-10 items-center justify-between rounded-lg px-2.5 text-sm no-underline ${
+        active ? 'bg-accent-soft font-semibold text-accent-text' : 'text-ink-3 hover:bg-chip'
+      }`}
+    >
+      <span className="flex items-center gap-2.5">
+        <SectionIcon />
+        {section.label}
+      </span>
+      {items && <span className="text-xs font-medium">{items.length}</span>}
+    </Link>
+  );
+}
+
+/**
+ * Onglets des sections sur téléphone, en haut de l'écran : seulement quand
+ * la langue en compte au moins deux.
+ */
+function SectionTabs({ sections, pathname }: { sections: Section[]; pathname: string }) {
+  return (
+    <nav aria-label="Sections" className="px-5 pt-[max(0.75rem,env(safe-area-inset-top))] lg:hidden">
+      <div className="flex rounded-[10px] bg-track p-[3px]">
+        {sections.map((section) => {
+          const active = section.matches(pathname);
+          return (
+            <Link
+              key={section.to}
+              to={section.to}
+              aria-current={active ? 'page' : undefined}
+              className={`flex h-9 flex-1 items-center justify-center rounded-lg text-sm no-underline ${
+                active ? 'bg-surface font-semibold text-accent-text shadow-sm' : 'text-ink-3'
+              }`}
+            >
+              {section.label}
+            </Link>
+          );
+        })}
+      </div>
     </nav>
   );
 }

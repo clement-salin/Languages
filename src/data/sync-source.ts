@@ -55,7 +55,15 @@ export const syncSource = {
   async apply(merged: Record<SyncableCollection, MergeResult<Syncable>>, syncedAt: string): Promise<void> {
     const database = await db();
     const tx = database.transaction(
-      ['deVerbs', 'enPhrasals', 'deVerbTombstones', 'enPhrasalTombstones', 'meta'],
+      [
+        'deVerbs',
+        'enPhrasals',
+        'enExpressions',
+        'deVerbTombstones',
+        'enPhrasalTombstones',
+        'enExpressionTombstones',
+        'meta',
+      ],
       'readwrite',
     );
     for (const collection of SYNCABLE_COLLECTIONS) {
