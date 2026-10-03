@@ -1,27 +1,13 @@
 import type { ReactNode } from 'react';
-import { Link } from 'react-router-dom';
-import { PlusIcon, SearchIcon, SettingsIcon } from './icons';
+import { PlusIcon, SearchIcon } from './icons';
 
-/**
- * En-tête d'une page. Sur téléphone, il porte aussi l'accès aux réglages
- * (synchronisation, sauvegarde), qui sur grand écran est en pied de barre
- * latérale.
- */
+/** En-tête d'une page. Les réglages sont dans la barre d'onglets (téléphone) ou en pied de barre latérale. */
 export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: ReactNode; actions?: ReactNode }) {
   return (
     <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4 px-5 pt-[max(1.5rem,var(--page-top))] pb-4 lg:px-8 lg:pt-7 lg:pb-5">
-      <div className="flex min-w-0 flex-1 items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="m-0 font-display text-3xl font-semibold tracking-tight lg:text-[32px]">{title}</h1>
-          {subtitle && <div className="mt-1 text-sm text-ink-soft">{subtitle}</div>}
-        </div>
-        <Link
-          to="/reglages"
-          aria-label="Réglages"
-          className="flex size-11 shrink-0 items-center justify-center rounded-full text-ink-3 lg:hidden"
-        >
-          <SettingsIcon size={20} />
-        </Link>
+      <div className="min-w-0 flex-1">
+        <h1 className="m-0 font-display text-3xl font-semibold tracking-tight lg:text-[32px]">{title}</h1>
+        {subtitle && <div className="mt-1 text-sm text-ink-soft">{subtitle}</div>}
       </div>
       {actions && <div className="flex w-full flex-wrap items-center gap-3 lg:w-auto">{actions}</div>}
     </header>
