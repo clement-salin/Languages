@@ -6,7 +6,7 @@ import { HeaderAction, PageHeader, SearchField } from '../../components/PageHead
 import { enPhrasals, updatePhrasal } from '../../data/en-phrasals';
 import { useCollection } from '../../data/hooks';
 import { irregularForms } from '../../domain/en/irregular';
-import { groupPhrasals, type GroupMode, type PhrasalGroup, type PhrasalVerb } from '../../domain/en/phrasal';
+import { groupPhrasals, translatable, type GroupMode, type PhrasalGroup, type PhrasalVerb } from '../../domain/en/phrasal';
 import { fold, plural } from '../../domain/text';
 import { AddPhrasalForm } from './AddPhrasalForm';
 import { EntryCard } from './EntryCard';
@@ -238,6 +238,7 @@ function GroupPanel({ group, mode }: { group: PhrasalGroup; mode: GroupMode }) {
             key={p.id}
             id={p.id}
             title={<>{p.base} <span className="font-semibold text-accent-text">{p.particle}</span></>}
+            translate={translatable(p)}
             fields={p}
             onUpdate={(patch) => void updatePhrasal(p.id, patch)}
             onRemove={() => {

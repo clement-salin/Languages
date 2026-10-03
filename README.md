@@ -39,6 +39,13 @@ Idiomes et tournures figées (*break the ice*, *it's not my cup of tea*), avec
 leur sens et un exemple, saisis par toi. Recherche dans l'expression, le sens
 et l'exemple ; tri par date d'ajout ou alphabétique.
 
+## Suggestion de traduction
+
+Un bouton « Suggérer une traduction (DeepL) » sous les champs de traduction et
+de sens propose une traduction en français ; elle ne remplit le champ que si
+tu cliques sur « Utiliser ». Demande le réseau, le jeton de synchronisation et
+une clé DeepL sur le serveur (`docs/deploiement.md`).
+
 ## Synchronisation et sauvegarde
 
 - **Local-first** : le carnet est enregistré sur l'appareil (IndexedDB) et

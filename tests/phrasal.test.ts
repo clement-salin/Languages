@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { expressionsFromBackup, phrasalsFromBackup, toBackupJson } from '../src/domain/backup';
 import { cleanExpression, expressionId, normalizeExpression } from '../src/domain/en/expression';
 import { irregularForms } from '../src/domain/en/irregular';
-import { groupPhrasals, normalizePhrasal, parsePhrasal, particleKey, type PhrasalVerb } from '../src/domain/en/phrasal';
+import { groupPhrasals, normalizePhrasal, parsePhrasal, particleKey, translatable, type PhrasalVerb } from '../src/domain/en/phrasal';
 
 const T = '2026-10-03T08:00:00.000Z';
 
@@ -96,5 +96,11 @@ describe('expressions', () => {
     const json = toBackupJson([], [], [normalizeExpression({ text: 'Spill the beans', addedAt: T })!]);
     expect(expressionsFromBackup(json).map((e) => e.id)).toEqual(['spill the beans']);
     expect(expressionsFromBackup('{"verbs":[]}')).toEqual([]);
+  });
+});
+
+describe('texte à traduire', () => {
+  it('met le phrasal verb à l’infinitif', () => {
+    expect(translatable({ base: 'sit', particle: 'up' })).toBe('to sit up');
   });
 });

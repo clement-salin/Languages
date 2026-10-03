@@ -17,6 +17,7 @@ Décidé le 03/10/2026 : reprendre l'architecture de batch-cooking (`clement-sal
 - **Synchronisation local-first**, reprise de batch-cooking : le navigateur fait foi, le serveur est un point de rendez-vous. Collections : `deVerbs`, `enPhrasals`, `enExpressions` (ajoutée le 03/10/2026, base IndexedDB en version 2).
 - **Dictionnaire allemand** : `german-verbs-dict` (~8 400 verbes, 5,5 Mo de JSON), chargé par `src/data/lexicon.ts` **seulement quand une page allemande le demande** (`useLexicon`). Fichier séparé (`assetsInlineLimit: 0`), jamais inliné, précaché par le service worker.
 - **Serveur** : `server/main.ts`, Node **sans aucune dépendance** (SQLite fourni par `node:sqlite`). Ne pas y ajouter de paquet sans raison forte.
+- **Suggestion de traduction (DeepL)**, ajoutée le 03/10/2026 : `POST /api/translate` (`server/translate.ts`, `fetch` seul), réservée au porteur du jeton de synchronisation — ouverte, elle ferait du serveur un relais gratuit vers DeepL aux frais du quota. Clé dans `DEEPL_API_KEY` (`.env` du VPS), facultative : absente, la route répond 503 et le reste de l'app ne change pas. Les clés gratuites (suffixe `:fx`) visent `api-free.deepl.com`. Choisi pour tester avant un éventuel passage à un modèle de langage (Claude), qui donnerait aussi des exemples — DeepL ne traduit que mot à mot et rate souvent le sens figuré.
 - **Service worker** : écrit à la main, produit par `vite-plugins/service-worker.ts`. Une nouvelle version attend que l'utilisateur accepte le bandeau.
 - **Tests** : Vitest (`tests/`), dont le moteur de conjugaison sur le vrai dictionnaire et la couche IndexedDB (`fake-indexeddb`).
 
@@ -56,7 +57,7 @@ Verbheft rangeait le carnet dans `localStorage` (`verbheft:verbs`). `src/data/le
 - **Jamais de couleur en dur dans un composant** : ajouter un jeton dans `src/index.css`. Seule exception, la bascule, qui montre les deux langues à la fois.
 - Drapeaux en SVG (`Flag.tsx`), pas en emoji : un emoji drapeau s'affiche en lettres sous Windows.
 - **Icône** (03/10/2026) : deux bulles de dialogue, brique devant (allemand), bleu marine derrière (anglais), sur le fond crème de l'app. Source : `public/icons/icon.svg` ; les PNG (`icon-192`, `icon-512`, `apple-touch-icon` en 180) en sont des rendus, carrés pleins sans transparence et contenu dans la zone sûre des icônes « maskable ». Les refaire à chaque changement du SVG. iOS garde l'ancienne icône tant que l'app n'a pas été retirée puis réajoutée à l'écran d'accueil.
-- **L'app propose, elle n'invente pas** : aucun sens de phrasal verb n'est deviné, aucune forme anglaise n'est déduite d'une règle (seule la table des irréguliers fait foi).
+- **L'app propose, elle n'invente pas** : aucun sens de phrasal verb n'est deviné, aucune forme anglaise n'est déduite d'une règle (seule la table des irréguliers fait foi). La traduction DeepL (`TranslationSuggestion`) s'affiche avec un bouton « Utiliser » et **ne remplit jamais un champ toute seule** ; elle n'apparaît pas sur un appareil sans jeton (elle ne pourrait qu'échouer). Un phrasal verb est envoyé à l'infinitif (« to sit up », `translatable`) pour que DeepL le traduise comme un verbe.
 - Action principale : bouton flottant sur téléphone (`FloatingAction`), bouton d'en-tête sur grand écran.
 - **Style non arrêté** : la maquette validée sur la structure est https://claude.ai/artifact/Bz8QKJbV4rrudhSFm55qVq (palette reprise de recettes). Deux autres styles y sont proposés (« Nuit d'encre », « Affiche suisse ») ; le choix est reporté. Tout passe par les jetons de `src/index.css` pour qu'en changer ne touche aucun composant.
 
@@ -80,7 +81,7 @@ Avant de proposer un commit : `npm run typecheck && npm test`.
 | --- | --- |
 | Serveur | `root@46.225.70.60` (`clement-ubuntu-4gb-DE`), partagé avec d'autres sites |
 | Domaine | `languages.clementsalin.com`, enregistrement `A` chez Cloudflare, **nuage gris** |
-| Sur le VPS | `/root/languages/` : `docker-compose.yml`, `.env` (`SYNC_TOKEN`) |
+| Sur le VPS | `/root/languages/` : `docker-compose.yml`, `.env` (`SYNC_TOKEN`, `DEEPL_API_KEY` facultatif) |
 | Conteneur | `languages`, image `languages:latest` (Node), port 8080, réseau Docker `web`, aucun port publié |
 | Données | volume `languages_languages-data` sur le VPS (SQLite) — `languages-data` dans le compose, préfixé du nom du projet par Docker |
 | Proxy | conteneur `caddy-proxy-caddy-1`, config dans `/opt/caddy-proxy/Caddyfile` : `reverse_proxy languages:8080` |

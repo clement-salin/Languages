@@ -53,6 +53,15 @@ export function phrasalId(base: string, particle: string): string {
   return `${base} ${particle}`;
 }
 
+/**
+ * Ce qu'on donne à traduire : « to sit up » plutôt que « sit up ».
+ * L'infinitif oriente la traduction vers le verbe, et non vers un ordre
+ * (« assieds-toi ! ») ou un nom.
+ */
+export function translatable(phrasal: { base: string; particle: string }): string {
+  return `to ${phrasal.base} ${phrasal.particle}`;
+}
+
 /** Particule sans les mots de remplissage : « sth up » → « up ». */
 export function particleKey(particle: string): string {
   const words = particle.split(' ').filter((w) => !PLACEHOLDERS.has(w.replace(/[()]/g, '')));

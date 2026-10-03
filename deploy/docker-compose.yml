@@ -20,6 +20,9 @@ services:
       # manque, plutôt que de lancer l'app avec la synchronisation éteinte
       # sans que rien ne le signale.
       SYNC_TOKEN: ${SYNC_TOKEN:?absent — cree un fichier .env a cote de ce docker-compose.yml}
+      # Clé DeepL, facultative au contraire du jeton : absente, seule la
+      # suggestion de traduction est éteinte.
+      DEEPL_API_KEY: ${DEEPL_API_KEY:-}
 
     volumes:
       # Volume nommé : la base SQLite survit aux mises à jour de l'image.

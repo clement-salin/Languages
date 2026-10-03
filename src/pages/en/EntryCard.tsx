@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { TranslationSuggestion } from '../../components/TranslationSuggestion';
 import { useDebouncedSave } from '../../use-debounced-save';
 
 /** Ce qu'une fiche anglaise permet de modifier : le reste fait l'identifiant. */
@@ -13,9 +14,11 @@ export interface EditableFields {
  * Le titre n'est pas modifiable : il fait l'identifiant, partagé entre
  * appareils. Pour le changer, on supprime et on recrée.
  */
-export function EntryCard({ id, title, fields, onUpdate, onRemove }: {
+export function EntryCard({ id, title, translate, fields, onUpdate, onRemove }: {
   id: string;
   title: ReactNode;
+  /** Le texte anglais à faire traduire pour proposer un sens. */
+  translate: string;
   fields: EditableFields;
   onUpdate: (patch: Partial<EditableFields>) => void;
   onRemove: () => void;
@@ -35,7 +38,7 @@ export function EntryCard({ id, title, fields, onUpdate, onRemove }: {
         </button>
       </div>
       {editing ? (
-        <Editor id={id} fields={fields} onUpdate={onUpdate} onRemove={onRemove} />
+        <Editor id={id} translate={translate} fields={fields} onUpdate={onUpdate} onRemove={onRemove} />
       ) : (
         <>
           <div className="text-ink-2">{fields.meaning || <span className="text-ink-faint">Sens à compléter</span>}</div>
@@ -47,8 +50,9 @@ export function EntryCard({ id, title, fields, onUpdate, onRemove }: {
   );
 }
 
-function Editor({ id, fields, onUpdate, onRemove }: {
+function Editor({ id, translate, fields, onUpdate, onRemove }: {
   id: string;
+  translate: string;
   fields: EditableFields;
   onUpdate: (patch: Partial<EditableFields>) => void;
   onRemove: () => void;
@@ -65,6 +69,7 @@ function Editor({ id, fields, onUpdate, onRemove }: {
     <div className="mt-2 flex flex-col gap-2">
       <label htmlFor={`${prefix}-meaning`} className="text-xs text-ink-soft">Sens en français</label>
       <input id={`${prefix}-meaning`} value={meaning} onChange={(e) => setMeaning(e.target.value)} className={`${field} h-10`} />
+      <TranslationSuggestion text={translate} source="EN" onUse={setMeaning} />
       <label htmlFor={`${prefix}-example`} className="text-xs text-ink-soft">Exemple</label>
       <input id={`${prefix}-example`} lang="en" value={example} onChange={(e) => setExample(e.target.value)} className={`${field} h-10`} />
       <label htmlFor={`${prefix}-notes`} className="text-xs text-ink-soft">Notes</label>

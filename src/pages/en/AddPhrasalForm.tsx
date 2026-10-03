@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CloseIcon } from '../../components/icons';
+import { TranslationSuggestion } from '../../components/TranslationSuggestion';
 import { addPhrasal } from '../../data/en-phrasals';
 import { irregularForms } from '../../domain/en/irregular';
-import { parsePhrasal, phrasalId } from '../../domain/en/phrasal';
+import { parsePhrasal, phrasalId, translatable } from '../../domain/en/phrasal';
 import { groupPath } from './paths';
 
 /**
@@ -83,6 +84,7 @@ export function AddPhrasalForm({ onClose, existing }: { onClose: () => void; exi
         <div className="flex flex-col gap-1">
           <label htmlFor="meaning-input" className="text-sm text-ink-3">Sens en français</label>
           <input id="meaning-input" value={meaning} onChange={(e) => setMeaning(e.target.value)} placeholder="s’asseoir" className={field} />
+          <TranslationSuggestion text={parsed ? translatable(parsed) : ''} source="EN" onUse={setMeaning} />
         </div>
         <div className="flex flex-col gap-1 lg:col-span-2">
           <label htmlFor="example-input" className="text-sm text-ink-3">Exemple (facultatif)</label>

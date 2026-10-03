@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BackIcon } from '../../components/icons';
+import { TranslationSuggestion } from '../../components/TranslationSuggestion';
 import { deVerbs, updateVerb } from '../../data/de-verbs';
 import type { Lexicon } from '../../data/lexicon';
 import type { Auxiliary } from '../../domain/de/auxiliary';
@@ -86,6 +87,7 @@ function Header({ saved, conj }: { saved: SavedVerb; conj: Conjugation | null })
         placeholder="Ajouter une traduction…"
         className="-mx-2 h-10 rounded-lg border border-transparent bg-transparent px-2 text-base text-ink-3 hover:border-line focus:border-line-strong focus:bg-surface"
       />
+      <TranslationSuggestion text={saved.id} source="DE" onUse={setTranslation} />
       {conj && (
         <ul aria-label="Caractéristiques" className="m-0 flex list-none flex-wrap gap-1.5 p-0">
           {badges(conj).map(([label, title, accent]) => (

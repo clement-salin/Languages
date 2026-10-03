@@ -129,6 +129,27 @@ Le workflow ne publie plus sur Pages, mais la dernière version publiée y reste
 
 ---
 
+## Suggestion de traduction (DeepL)
+
+Facultative : sans clé, le bouton « Suggérer une traduction » répond que la traduction n'est pas configurée, et rien d'autre ne change.
+
+1. Créer un compte **DeepL API Free** sur https://www.deepl.com/pro-api (gratuit jusqu'à 500 000 caractères par mois ; une carte est demandée pour vérifier l'identité, rien n'est débité sur l'offre gratuite). Copier la clé dans **Account → API Keys** : elle se termine par `:fx`.
+2. Sur le VPS, l'ajouter au `.env`, **à la suite** de la ligne du jeton, toujours avec `nano` :
+
+   ```bash
+   ssh root@46.225.70.60
+   nano /root/languages/.env      # ajouter : DEEPL_API_KEY=<la clé>
+   sed 's/=.*/=…/' /root/languages/.env   # doit montrer SYNC_TOKEN=… et DEEPL_API_KEY=…
+   ```
+
+3. Envoyer le nouveau `docker-compose.yml` (qui transmet la clé au conteneur) et relancer — la CI ne peut pas l'envoyer, d'où le script, depuis le Mac :
+
+   ```bash
+   ./scripts/deploy.sh
+   ```
+
+Vérifier ensuite dans l'app : un phrasal verb, « Suggérer une traduction », une proposition doit apparaître. En cas d'erreur, `docker logs --tail 20 languages` ; la ligne `[traduction] DEEPL_API_KEY absent` au démarrage signifie que la clé n'est pas arrivée jusqu'au conteneur.
+
 ## Mises à jour
 
 Fusionner une PR sur `main`. En secours, ou quand `deploy/docker-compose.yml` a changé (la CI ne peut pas l'envoyer) : `./scripts/deploy.sh`.

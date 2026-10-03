@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CloseIcon } from '../../components/icons';
+import { TranslationSuggestion } from '../../components/TranslationSuggestion';
 import { addVerb } from '../../data/de-verbs';
 import type { Lexicon } from '../../data/lexicon';
 import { verbPath } from './paths';
@@ -150,6 +151,9 @@ export function AddVerbForm({ lexicon, onClose }: { lexicon: Lexicon; onClose: (
         <button type="submit" className="h-11 cursor-pointer rounded-[10px] border-0 bg-accent px-5 font-semibold text-white">
           Ajouter
         </button>
+      </div>
+      <div className="mt-2">
+        <TranslationSuggestion text={verb.trim()} source="DE" onUse={setTranslation} />
       </div>
       {unknown && (
         <div role="alert" className="mt-3 text-sm">
