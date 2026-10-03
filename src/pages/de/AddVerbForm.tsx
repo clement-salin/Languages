@@ -18,8 +18,8 @@ const FRENCH_DELAY_MS = 700;
  *   dictionnaire, propositions en cas de faute de frappe.
  * - Un mot que le dictionnaire allemand ne connaît pas (« manger ») : l'app
  *   le traduit d'elle-même depuis le français (DeepL) et propose le verbe
- *   allemand (« essen »), avec le mot français pour traduction. Rien n'est
- *   ajouté sans un clic.
+ *   allemand (« essen »), avec le mot français pour traduction. Le bouton
+ *   principal devient « Ajouter « essen » » : rien n'est ajouté sans ce clic.
  */
 export function AddVerbForm({ lexicon, onClose }: { lexicon: Lexicon; onClose: () => void }) {
   const navigate = useNavigate();
@@ -71,6 +71,7 @@ export function AddVerbForm({ lexicon, onClose }: { lexicon: Lexicon; onClose: (
     }
   }
 
+  /** Une faute de frappe corrigée n'est pas une traduction : `translation` vide dans ce cas. */
   async function add(id: string, translation: string): Promise<void> {
     await addVerb({ id, translation });
     onClose();
@@ -82,6 +83,12 @@ export function AddVerbForm({ lexicon, onClose }: { lexicon: Lexicon; onClose: (
     setDismissed(true);
     if (!raw) {
       verbRef.current?.focus();
+      return;
+    }
+    // La proposition depuis le français est affichée dans le bouton lui-même :
+    // le presser, c'est l'accepter.
+    if (!known && french.state === 'found') {
+      await add(french.verb, french.typo ? '' : french.from);
       return;
     }
     const result = lexicon.lookup(raw);
@@ -154,7 +161,13 @@ export function AddVerbForm({ lexicon, onClose }: { lexicon: Lexicon; onClose: (
           )}
         </div>
         <button type="submit" className="h-11 cursor-pointer rounded-[10px] border-0 bg-accent px-5 font-semibold text-white">
-          Ajouter
+          {!known && french.state === 'found' ? (
+            <>
+              Ajouter « <span lang="de">{french.verb}</span> »
+            </>
+          ) : (
+            'Ajouter'
+          )}
         </button>
       </div>
 
@@ -173,14 +186,7 @@ export function AddVerbForm({ lexicon, onClose }: { lexicon: Lexicon; onClose: (
                 </>
               )}
               <span lang="de" className="font-semibold text-ink">{french.verb}</span>
-              <button
-                type="button"
-                // Une faute de frappe corrigée n'est pas une traduction.
-                onClick={() => void add(french.verb, french.typo ? '' : french.from)}
-                className="min-h-9 cursor-pointer rounded-lg border border-line-strong bg-surface px-3 text-accent-text"
-              >
-                Ajouter « {french.verb} »
-              </button>
+              {french.typo && <span className="text-ink-soft">?</span>}
             </>
           )}
           {french.state === 'not-a-verb' && (
