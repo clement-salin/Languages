@@ -1,0 +1,92 @@
+# Vérification à chaque proposition, déploiement à chaque fusion sur main.
+#
+# Le déploiement reprend celui de batch-cooking : construire l'image,
+# l'envoyer par SSH, relancer le conteneur. Aucun registre d'images, et le
+# serveur ne reçoit toujours ni code source ni accès au dépôt.
+#
+# GitHub Pages n'est plus publié : l'app a désormais besoin de son serveur
+# (synchronisation), qu'une copie statique n'aurait pas.
+
+name: Vérification et déploiement
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Deux fusions rapprochées ne doivent pas déployer en même temps.
+concurrency:
+  group: deploiement-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verification:
+    name: Types, tests, construction
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  deploiement:
+    name: Mise en ligne
+    # Rien ne part si la vérification échoue.
+    needs: verification
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      # Tant que la clé de déploiement n'est pas enregistrée dans les secrets
+      # du dépôt, on s'arrête ici avec un avertissement plutôt qu'en échec :
+      # la mise en place est décrite dans docs/deploiement.md.
+      - name: Clé de déploiement présente ?
+        id: cle
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          if [ -z "$DEPLOY_SSH_KEY" ]; then
+            echo "::warning::Secret DEPLOY_SSH_KEY absent : déploiement sauté (voir docs/deploiement.md)."
+            echo "presente=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "presente=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.cle.outputs.presente == 'true'
+
+      # Le runner est en x86_64, comme le VPS : pas d'émulation.
+      - name: Construire l'image
+        if: steps.cle.outputs.presente == 'true'
+        run: docker build -t languages .
+
+      - name: Préparer l'accès SSH
+        if: steps.cle.outputs.presente == 'true'
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          # L'empreinte du serveur est fournie, jamais acceptée aveuglément.
+          printf '%s\n' "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      # La clé est restreinte côté serveur à scripts/receive-deploy.sh : seul
+      # le flux de l'image compte, rien de ce qu'on envoie n'est exécuté.
+      - name: Envoyer l'image et relancer
+        if: steps.cle.outputs.presente == 'true'
+        run: |
+          docker save languages \
+            | gzip \
+            | ssh -i ~/.ssh/id_ed25519 -o BatchMode=yes root@46.225.70.60
+
+      - name: Vérifier depuis l'extérieur
+        if: steps.cle.outputs.presente == 'true'
+        run: curl -sfI --max-time 20 https://languages.clementsalin.com/ | head -1

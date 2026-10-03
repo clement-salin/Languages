@@ -1,16 +1,37 @@
-# Déployé dans /root/verbheft sur le VPS, à côté de dist/ et du Caddyfile.
+# Déployé dans /root/languages sur le VPS, à côté d'un fichier .env qui
+# contient SYNC_TOKEN (jamais dans le dépôt).
+#
+# L'image n'est pas construite sur le serveur : elle y arrive toute faite,
+# par la CI ou par scripts/deploy.sh. Le VPS ne reçoit ni code source ni
+# accès au dépôt.
+#
+#   docker compose up -d
+
 services:
-  verbheft:
-    # Même image que le proxy : déjà présente sur le serveur.
-    image: caddy:2-alpine
-    container_name: verbheft
+  languages:
+    image: languages:latest
+    # Nom fixe : c'est sous ce nom que le Caddy principal joint l'app.
+    container_name: languages
     restart: unless-stopped
+
+    environment:
+      DATA_DIR: /data
+      # Le « :? » fait échouer le démarrage avec un message clair si le jeton
+      # manque, plutôt que de lancer l'app avec la synchronisation éteinte
+      # sans que rien ne le signale.
+      SYNC_TOKEN: ${SYNC_TOKEN:?absent — cree un fichier .env a cote de ce docker-compose.yml}
+
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./dist:/srv:ro
+      # Volume nommé : la base SQLite survit aux mises à jour de l'image.
+      - languages-data:/data
+
+    # Aucun port publié : le Caddy principal joint le conteneur par le
+    # réseau Docker `web`.
     networks:
       - web
-    # Aucun port publié : le Caddy principal joint le conteneur par le réseau.
+
+volumes:
+  languages-data:
 
 networks:
   web:
