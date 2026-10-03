@@ -33,12 +33,18 @@ qui se construit sur *sit*) ou **par particule** (tout ce qui finit par *up*).
   partir d'une table d'environ 150 verbes. Un verbe absent de la table n'est
   pas présumé régulier : aucune forme n'est alors affichée.
 
+## Anglais : expressions
+
+Idiomes et tournures figées (*break the ice*, *it's not my cup of tea*), avec
+leur sens et un exemple, saisis par toi. Recherche dans l'expression, le sens
+et l'exemple ; tri par date d'ajout ou alphabétique.
+
 ## Synchronisation et sauvegarde
 
 - **Local-first** : le carnet est enregistré sur l'appareil (IndexedDB) et
   fonctionne hors ligne. Avec le jeton du serveur (Réglages), il s'échange tout
   seul entre le Mac et l'iPhone.
-- **Sauvegarde** : export JSON des deux langues (réimportable), CSV des verbes
+- **Sauvegarde** : export JSON de tout le carnet (réimportable), CSV des verbes
   allemands. L'import accepte aussi les sauvegardes de Verbheft et une simple
   liste de verbes, un par ligne, avec en option `verbe;traduction`.
 - **Reprise de Verbheft** : les verbes de l'ancienne version sont repris
@@ -62,7 +68,7 @@ Organisation :
 | Dossier | Contenu |
 | --- | --- |
 | `src/domain/de/` | Moteur de conjugaison, sans dépendance au navigateur : analyse de la saisie, particules, auxiliaire, orthographe, corrections du dictionnaire |
-| `src/domain/en/` | Phrasal verbs (analyse, regroupement) et table des verbes irréguliers |
+| `src/domain/en/` | Phrasal verbs (analyse, regroupement), expressions, table des verbes irréguliers |
 | `src/domain/sync.ts` | Protocole de synchronisation, partagé par le navigateur et le serveur |
 | `src/data/` | IndexedDB, dépôts, reprise de Verbheft, moteur de synchronisation |
 | `src/pages/`, `src/components/` | Interface (React + Tailwind) |

@@ -133,7 +133,7 @@ export function ConjugationPage() {
           <VerbList rows={rows} empty={verbs?.length === 0} selectedId={verbId} />
         </section>
 
-        <div className={`min-w-0 flex-1 ${verbId === undefined ? 'hidden lg:block' : 'pt-[max(1rem,env(safe-area-inset-top))] lg:pt-0'}`}>
+        <div className={`min-w-0 flex-1 ${verbId === undefined ? 'hidden lg:block' : 'pt-[max(1rem,var(--page-top))] lg:pt-0'}`}>
           {verbId === undefined ? (
             <Placeholder count={verbs?.length ?? 0} />
           ) : !verbs || !lexicon ? (

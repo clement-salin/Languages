@@ -1,11 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#1d1f24"/>
-  <rect x="128" y="96" width="256" height="320" rx="28" fill="#f7f5f0"/>
-  <rect x="128" y="96" width="40" height="320" rx="20" fill="#e2ddd1"/>
-  <rect x="200" y="244" width="144" height="18" rx="9" fill="#b9b2a2"/>
-  <rect x="200" y="292" width="144" height="18" rx="9" fill="#b9b2a2"/>
-  <rect x="200" y="340" width="96" height="18" rx="9" fill="#b9b2a2"/>
-  <path d="M296 96h48v112l-24-18-24 18z" fill="#c8102e"/>
-  <path d="M296 96h48v28h-48z" fill="#1d1f24"/>
-  <path d="M296 160h48v48l-24-18-24 18z" fill="#ffce00"/>
+  <!-- Deux bulles de dialogue : l'allemand devant, l'anglais derrière. -->
+  <rect width="512" height="512" rx="112" fill="#f7f6f3"/>
+  <!-- Bulle arrière : l'anglais (bleu marine). -->
+  <rect x="200" y="118" width="200" height="150" rx="40" fill="#2a5a94"/>
+  <path d="M342 260 L372 316 L298 260 Z" fill="#2a5a94"/>
+  <rect x="236" y="150" width="128" height="16" rx="8" fill="#f7f6f3" opacity="0.9"/>
+  <rect x="236" y="182" width="92" height="16" rx="8" fill="#f7f6f3" opacity="0.9"/>
+  <!-- Liseré couleur du fond, pour détacher la bulle avant. -->
+  <rect x="112" y="200" width="220" height="164" rx="44" fill="none" stroke="#f7f6f3" stroke-width="24"/>
+  <path d="M152 356 L136 414 L206 356 Z" fill="none" stroke="#f7f6f3" stroke-width="24" stroke-linejoin="round"/>
+  <!-- Bulle avant : l'allemand (brique). -->
+  <rect x="112" y="200" width="220" height="164" rx="44" fill="#a33a2c"/>
+  <path d="M152 356 L136 414 L206 356 Z" fill="#a33a2c"/>
+  <rect x="148" y="250" width="148" height="16" rx="8" fill="#f7f6f3"/>
+  <rect x="148" y="282" width="148" height="16" rx="8" fill="#f7f6f3"/>
+  <rect x="148" y="314" width="92" height="16" rx="8" fill="#f7f6f3"/>
 </svg>

@@ -1,7 +1,9 @@
 import 'fake-indexeddb/auto';
+import { openDB } from 'idb';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db, useFreshDatabaseForTests } from '../src/data/db';
 import { addVerb, deVerbs, updateVerb } from '../src/data/de-verbs';
+import { addExpression, enExpressions } from '../src/data/en-expressions';
 import { addPhrasal, enPhrasals } from '../src/data/en-phrasals';
 import { LEGACY_BACKUP_KEY, LEGACY_KEY, migrateLegacyVerbs } from '../src/data/legacy-migration';
 import { syncSource } from '../src/data/sync-source';
@@ -20,6 +22,7 @@ class MemoryStorage {
 }
 
 let n = 0;
+const T0 = '2026-10-01T10:00:00.000Z';
 beforeEach(async () => {
   await useFreshDatabaseForTests(`test-${++n}`);
 });
@@ -103,6 +106,7 @@ describe('application d’un échange', () => {
           removals: [],
         },
         enPhrasals: { upserts: [], removals: [] },
+        enExpressions: { upserts: [], removals: [] },
       },
       now,
     );
@@ -110,6 +114,39 @@ describe('application d’un échange', () => {
     expect(await syncSource.lastSyncAt()).toBe(now);
     expect(await syncSource.requestSince()).toBe(now);
     expect((await syncSource.snapshot()).deVerbs.tombstones).toEqual([]);
-    expect(await (await db()).get('meta', 'sync')).toMatchObject({ collections: ['deVerbs', 'enPhrasals'] });
+    expect(await (await db()).get('meta', 'sync')).toMatchObject({ collections: ['deVerbs', 'enPhrasals', 'enExpressions'] });
+  });
+});
+
+describe('montée de version de la base', () => {
+  it('ajoute les expressions sans toucher aux verbes déjà enregistrés', async () => {
+    const name = `test-v1-${++n}`;
+    // Une base telle que la laissait la première version de Languages.
+    const v1 = await openDB(name, 1, {
+      upgrade(database) {
+        for (const store of ['deVerbs', 'deVerbTombstones', 'enPhrasals', 'enPhrasalTombstones']) {
+          database.createObjectStore(store, { keyPath: 'id' });
+        }
+        database.createObjectStore('meta', { keyPath: 'key' });
+      },
+    });
+    await v1.put('deVerbs', { id: 'fahren', translation: '', notes: '', addedAt: T0, updatedAt: T0 });
+    await v1.put('meta', { key: 'sync', lastSyncAt: T0, collections: ['deVerbs', 'enPhrasals'] });
+    v1.close();
+
+    await useFreshDatabaseForTests(name);
+    expect((await deVerbs.get('fahren'))?.id).toBe('fahren');
+    expect(await addExpression({ text: 'Break the ice.', meaning: 'briser la glace' })).toBe(true);
+    expect((await enExpressions.get('break the ice'))?.text).toBe('Break the ice');
+    // L'appareil connaissait deux collections : il redemande tout une fois.
+    expect(await syncSource.requestSince()).toBeNull();
+  });
+});
+
+describe('expressions', () => {
+  it('n’ajoute pas deux fois la même, à la casse et aux espaces près', async () => {
+    expect(await addExpression({ text: 'break the ice', meaning: '' })).toBe(true);
+    expect(await addExpression({ text: '  Break  the ICE ', meaning: '' })).toBe(false);
+    expect(await addExpression({ text: '   ', meaning: '' })).toBe(false);
   });
 });

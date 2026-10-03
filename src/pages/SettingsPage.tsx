@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { PageHeader } from '../components/PageHeader';
 import { deVerbs } from '../data/de-verbs';
+import { enExpressions } from '../data/en-expressions';
 import { enPhrasals } from '../data/en-phrasals';
 import { useLexicon, useSyncState } from '../data/hooks';
 import type { Lexicon } from '../data/lexicon';
 import { pendingCount, readToken, syncNow, writeToken } from '../data/sync';
-import { phrasalsFromBackup, toBackupJson } from '../domain/backup';
+import { expressionsFromBackup, phrasalsFromBackup, toBackupJson } from '../domain/backup';
 import { normalizeSavedVerb } from '../domain/de/saved-verb';
 import { parseImport, toCsv } from '../domain/de/transfer';
 import { VERB_CLASS_LABELS } from '../domain/de/verb';
@@ -122,8 +123,8 @@ function BackupSection() {
   const date = () => new Date().toISOString().slice(0, 10);
 
   async function exportJson(): Promise<void> {
-    const [verbs, phrasals] = await Promise.all([deVerbs.all(), enPhrasals.all()]);
-    download(`languages-${date()}.json`, toBackupJson(verbs, phrasals), 'application/json');
+    const [verbs, phrasals, expressions] = await Promise.all([deVerbs.all(), enPhrasals.all(), enExpressions.all()]);
+    download(`languages-${date()}.json`, toBackupJson(verbs, phrasals, expressions), 'application/json');
   }
 
   async function exportCsv(lex: Lexicon): Promise<void> {
@@ -174,6 +175,15 @@ function BackupSection() {
         continue;
       }
       await enPhrasals.put({ ...phrasal, updatedAt: now });
+      added++;
+    }
+
+    for (const expression of expressionsFromBackup(text)) {
+      if (await enExpressions.get(expression.id)) {
+        existing++;
+        continue;
+      }
+      await enExpressions.put({ ...expression, updatedAt: now });
       added++;
     }
 

@@ -33,7 +33,7 @@ export interface Syncable {
  * Les collections synchronisées. En ajouter une se fait ici, puis dans le
  * client et dans le magasin serveur — qui, eux, sont génériques.
  */
-export const SYNCABLE_COLLECTIONS = ['deVerbs', 'enPhrasals'] as const;
+export const SYNCABLE_COLLECTIONS = ['deVerbs', 'enPhrasals', 'enExpressions'] as const;
 export type SyncableCollection = (typeof SYNCABLE_COLLECTIONS)[number];
 
 /** Trace d'une suppression, pour qu'elle se propage comme une modification. */

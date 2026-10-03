@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { phrasalsFromBackup, toBackupJson } from '../src/domain/backup';
+import { expressionsFromBackup, phrasalsFromBackup, toBackupJson } from '../src/domain/backup';
+import { cleanExpression, expressionId, normalizeExpression } from '../src/domain/en/expression';
 import { irregularForms } from '../src/domain/en/irregular';
 import { groupPhrasals, normalizePhrasal, parsePhrasal, particleKey, type PhrasalVerb } from '../src/domain/en/phrasal';
 
@@ -68,12 +69,32 @@ describe('verbes irréguliers', () => {
 
 describe('sauvegarde', () => {
   it('relit les expressions d’une sauvegarde complète', () => {
-    const json = toBackupJson([], [phrasal('sit', 'down')]);
+    const json = toBackupJson([], [phrasal('sit', 'down')], []);
     expect(phrasalsFromBackup(json).map((p) => p.id)).toEqual(['sit down']);
   });
 
   it('ignore un fichier qui n’en contient pas', () => {
     expect(phrasalsFromBackup('fahren\ngehen')).toEqual([]);
     expect(phrasalsFromBackup('{"verbs":[]}')).toEqual([]);
+  });
+});
+
+describe('expressions', () => {
+  it('nettoie la saisie et en dérive l’identifiant', () => {
+    expect(cleanExpression('  It’s not my  cup of tea. ')).toBe("It's not my cup of tea");
+    expect(expressionId('Break the Ice')).toBe('break the ice');
+  });
+
+  it('rejette une expression vide', () => {
+    expect(normalizeExpression({ text: '  ' })).toBeNull();
+    expect(normalizeExpression({ text: 'Spill the beans', addedAt: T })).toMatchObject({
+      id: 'spill the beans', text: 'Spill the beans', updatedAt: T,
+    });
+  });
+
+  it('fait partie de la sauvegarde', () => {
+    const json = toBackupJson([], [], [normalizeExpression({ text: 'Spill the beans', addedAt: T })!]);
+    expect(expressionsFromBackup(json).map((e) => e.id)).toEqual(['spill the beans']);
+    expect(expressionsFromBackup('{"verbs":[]}')).toEqual([]);
   });
 });

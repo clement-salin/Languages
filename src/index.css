@@ -66,6 +66,11 @@
  * le bouton flottant et la marge basse du contenu lisent ce même jeton.
  */
 :root {
+  /*
+   * Marge haute d'une page : l'encoche, sauf quand les onglets de section
+   * l'ont déjà prise en charge au-dessus (AppShell la remet alors à zéro).
+   */
+  --page-top: env(safe-area-inset-top);
   --lang-bar-height: calc(4.5rem + env(safe-area-inset-bottom));
 }
 

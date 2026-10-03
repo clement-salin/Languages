@@ -4,7 +4,7 @@ Instructions et contexte pour toute session Claude Code travaillant sur ce proje
 
 ## Projet
 
-**Languages** (anciennement **Verbheft**) : carnet de langues personnel, mono-utilisateur, en deux parties — **allemand** (conjugaison des verbes appris au fil des leçons) et **anglais** (phrasal verbs : *sit down*, *sit by*…). PWA installée sur Mac et iPhone, utilisable hors ligne, synchronisée entre appareils. Le README décrit les fonctionnalités et les corrections apportées au dictionnaire ; ce fichier fait foi sur les décisions techniques et le déploiement.
+**Languages** (anciennement **Verbheft**) : carnet de langues personnel, mono-utilisateur, en deux parties — **allemand** (conjugaison des verbes appris au fil des leçons) et **anglais** (phrasal verbs : *sit down*, *sit by*… ; expressions : *break the ice*…). PWA installée sur Mac et iPhone, utilisable hors ligne, synchronisée entre appareils. Le README décrit les fonctionnalités et les corrections apportées au dictionnaire ; ce fichier fait foi sur les décisions techniques et le déploiement.
 
 En ligne sur **https://languages.clementsalin.com** depuis le 01/10/2026 (Verbheft) ; refonte en Languages le 03/10/2026.
 
@@ -13,8 +13,8 @@ En ligne sur **https://languages.clementsalin.com** depuis le 01/10/2026 (Verbhe
 Décidé le 03/10/2026 : reprendre l'architecture de batch-cooking (`clement-salin/batch-cooking-app`), pour n'avoir qu'une façon de faire sur les deux projets.
 
 - **Vite + React + TypeScript + Tailwind CSS v4**, routage par react-router (`src/App.tsx`), adresses réelles (`/de/fahren`, `/en/verbe/sit`) : le serveur rend `index.html` pour toute adresse inconnue.
-- **Stockage** : IndexedDB via `idb` (`src/data/db.ts`), **derrière des dépôts** (`de-verbs.ts`, `en-phrasals.ts`, générique : `collection.ts`). Aucune page n'accède au stockage directement.
-- **Synchronisation local-first**, reprise de batch-cooking : le navigateur fait foi, le serveur est un point de rendez-vous. Collections : `deVerbs`, `enPhrasals`.
+- **Stockage** : IndexedDB via `idb` (`src/data/db.ts`), **derrière des dépôts** (`de-verbs.ts`, `en-phrasals.ts`, `en-expressions.ts`, générique : `collection.ts`, tous recensés dans `repositories.ts`). Aucune page n'accède au stockage directement.
+- **Synchronisation local-first**, reprise de batch-cooking : le navigateur fait foi, le serveur est un point de rendez-vous. Collections : `deVerbs`, `enPhrasals`, `enExpressions` (ajoutée le 03/10/2026, base IndexedDB en version 2).
 - **Dictionnaire allemand** : `german-verbs-dict` (~8 400 verbes, 5,5 Mo de JSON), chargé par `src/data/lexicon.ts` **seulement quand une page allemande le demande** (`useLexicon`). Fichier séparé (`assetsInlineLimit: 0`), jamais inliné, précaché par le service worker.
 - **Serveur** : `server/main.ts`, Node **sans aucune dépendance** (SQLite fourni par `node:sqlite`). Ne pas y ajouter de paquet sans raison forte.
 - **Service worker** : écrit à la main, produit par `vite-plugins/service-worker.ts`. Une nouvelle version attend que l'utilisateur accepte le bandeau.
@@ -39,7 +39,7 @@ Copiés, pas partagés par une bibliothèque commune (deux projets personnels : 
 ### Synchronisation : ce qu'il faut savoir
 
 - **Ajouter une collection** : l'inscrire dans `SYNCABLE_COLLECTIONS`, créer son magasin et son magasin de traces dans `upgrade` (`src/data/db.ts`, en montant `DB_VERSION`), l'ajouter à `TOMBSTONE_STORES` et à la transaction de `sync-source.ts`. Rien à changer côté serveur. Le piège de la date unique de dernier échange est déjà paré (`requestSince`).
-- **Identifiants déterministes** : un verbe allemand a pour identifiant son infinitif (`sich freuen`), un phrasal verb son expression (`sit down`). Deux appareils qui ajoutent le même mot désignent le même enregistrement. Conséquence : le verbe et la particule d'un phrasal verb ne se modifient pas (ils font l'identifiant) ; on supprime et on recrée.
+- **Identifiants déterministes** : un verbe allemand a pour identifiant son infinitif (`sich freuen`), un phrasal verb son expression (`sit down`), une expression son texte en minuscules (`break the ice`). Deux appareils qui ajoutent le même mot désignent le même enregistrement. Conséquence : le titre d'une fiche anglaise ne se modifie pas (il fait l'identifiant) ; on supprime et on recrée. Les deux types de fiches anglaises partagent `EntryCard`.
 - **La synchronisation est éteinte tant que `SYNC_TOKEN` est absent du serveur.** Ne jamais l'ouvrir par défaut.
 - **`/api/` n'est jamais mis en cache** par le service worker : une réponse de synchronisation rejouée fausserait l'état des appareils.
 
@@ -50,10 +50,12 @@ Verbheft rangeait le carnet dans `localStorage` (`verbheft:verbs`). `src/data/le
 ## Interface
 
 - **Deux parties, une bascule** (`src/components/LanguageSwitch.tsx`) : en tête de barre latérale sur grand écran, en barre fixe sous le pouce sur téléphone (bascule à 1024 px, `AppShell`). Elle ramène à la dernière page vue dans l'autre langue (`src/language.ts`).
-- **Les sections d'une langue ne deviennent des onglets sur téléphone qu'à partir de deux** : un onglet unique serait un contrôle qui ne mène nulle part. Pour l'instant : Conjugaison (allemand), Phrasal verbs (anglais).
+- **Les sections d'une langue ne deviennent des onglets sur téléphone qu'à partir de deux** : un onglet unique serait un contrôle qui ne mène nulle part. Sections : Conjugaison (allemand) ; Phrasal verbs et Expressions (anglais, donc onglets en haut de l'écran sur téléphone). Liste dans `src/components/sections.ts` ; les onglets prennent en charge l'encoche, d'où le jeton `--page-top` que les pages lisent au lieu de `env(safe-area-inset-top)`.
+- **Adresses anglaises** : les phrasal verbs occupent `/en` et `/en/<verbe|particule>/<clé>`, les expressions `/en/expressions`. Une nouvelle section anglaise prend une adresse à un seul segment, pour ne pas tomber dans `/en/:mode/:key`.
 - **Accent par langue** : brique pour l'allemand, bleu marine pour l'anglais, posés par `data-lang` sur la coquille (`src/index.css`). Les composants n'écrivent que `accent`, `accent-text`, `accent-soft`.
 - **Jamais de couleur en dur dans un composant** : ajouter un jeton dans `src/index.css`. Seule exception, la bascule, qui montre les deux langues à la fois.
 - Drapeaux en SVG (`Flag.tsx`), pas en emoji : un emoji drapeau s'affiche en lettres sous Windows.
+- **Icône** (03/10/2026) : deux bulles de dialogue, brique devant (allemand), bleu marine derrière (anglais), sur le fond crème de l'app. Source : `public/icons/icon.svg` ; les PNG (`icon-192`, `icon-512`, `apple-touch-icon` en 180) en sont des rendus, carrés pleins sans transparence et contenu dans la zone sûre des icônes « maskable ». Les refaire à chaque changement du SVG. iOS garde l'ancienne icône tant que l'app n'a pas été retirée puis réajoutée à l'écran d'accueil.
 - **L'app propose, elle n'invente pas** : aucun sens de phrasal verb n'est deviné, aucune forme anglaise n'est déduite d'une règle (seule la table des irréguliers fait foi).
 - Action principale : bouton flottant sur téléphone (`FloatingAction`), bouton d'en-tête sur grand écran.
 - **Style non arrêté** : la maquette validée sur la structure est https://claude.ai/artifact/Bz8QKJbV4rrudhSFm55qVq (palette reprise de recettes). Deux autres styles y sont proposés (« Nuit d'encre », « Affiche suisse ») ; le choix est reporté. Tout passe par les jetons de `src/index.css` pour qu'en changer ne touche aucun composant.
@@ -113,4 +115,4 @@ Le VPS héberge aussi recettes (batch-cooking), batucada.app, maudmyers.com et l
 
 - **Style graphique** : à choisir sur la maquette (voir Interface).
 - **Sauvegarde automatique de la base** : absente. Risque limité (chaque appareil garde tout le carnet), à reprendre de `.github/workflows/backup.yml` de batch-cooking si besoin.
-- Nouvelles sections par langue : chacune ajoute une entrée dans `SECTIONS` (`AppShell.tsx`), une route, et — si elle stocke des données — une collection synchronisée.
+- Nouvelles sections par langue : chacune ajoute une entrée dans `SECTIONS` (`src/components/sections.ts`), une route, et — si elle stocke des données — une collection synchronisée (voir « Ajouter une collection »).
