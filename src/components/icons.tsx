@@ -57,5 +57,5 @@ export const QuoteIcon = (p: IconProps) => (
   <Icon {...p}><path d="M4 5h16v11H9l-5 4z" /><path d="M9 9.5h6M9 12.5h4" /></Icon>
 );
 export const FilterIcon = (p: IconProps) => (
-  <Icon {...p}><path d="M4 6h16M7 12h10M10 18h4" /></Icon>
+  <Icon {...p}><path d="M3.5 5h17l-6.5 7.5v5.5l-4 2v-7.5z" /></Icon>
 );

@@ -6,7 +6,7 @@ import { HeaderAction, PageHeader, SearchField } from '../../components/PageHead
 import { deVerbs } from '../../data/de-verbs';
 import { useCollection, useLexicon } from '../../data/hooks';
 import type { SavedVerb } from '../../domain/de/saved-verb';
-import { VERB_CLASS_LABELS, type Conjugation } from '../../domain/de/verb';
+import type { Conjugation } from '../../domain/de/verb';
 import { fold, plural } from '../../domain/text';
 import { AddVerbForm } from './AddVerbForm';
 import { verbPath } from './paths';
@@ -259,30 +259,27 @@ function VerbList({ rows, empty, selectedId }: {
   );
 }
 
+/**
+ * Une ligne de la liste : le verbe et sa traduction, rien d'autre. Formes
+ * principales et type sont sur la fiche ; la liste sert à retrouver un verbe.
+ */
 function VerbRow({ verb, conj, selected }: {
   verb: SavedVerb;
   /** `undefined` tant que le dictionnaire charge, `null` pour un verbe non reconnu. */
   conj: Conjugation | null | undefined;
   selected: boolean;
 }) {
-  const p = conj?.principalParts;
   return (
     <Link
       to={verbPath(verb.id)}
       aria-current={selected ? 'page' : undefined}
-      className={`flex min-h-14 items-center justify-between gap-3 px-4 py-2.5 text-ink no-underline ${selected ? 'bg-accent-soft' : 'hover:bg-page'}`}
+      className={`flex min-h-12 items-baseline gap-2.5 px-4 py-3 text-ink no-underline ${selected ? 'bg-accent-soft' : 'hover:bg-page'}`}
     >
-      <span className="flex min-w-0 flex-col gap-0.5">
-        <span className="flex items-baseline gap-2">
-          <span lang="de" className="font-display text-[17px] font-semibold">{verb.id}</span>
-          {verb.translation && <span className="truncate text-sm text-ink-3">{verb.translation}</span>}
-        </span>
-        <span lang="de" className="truncate text-[13px] text-ink-soft">
-          {p ? `${p.present3} · ${p.preterite3} · ${p.perfect3}` : conj === undefined ? '…' : 'verbe non reconnu'}
-        </span>
-      </span>
-      {conj && (
-        <span className="shrink-0 rounded-md bg-badge px-2 py-0.5 text-xs text-badge-text">{VERB_CLASS_LABELS[conj.verbClass]}</span>
+      <span lang="de" className="shrink-0 font-display text-[17px] font-semibold">{verb.id}</span>
+      {conj === null ? (
+        <span className="truncate text-sm text-warn">non reconnu</span>
+      ) : (
+        verb.translation && <span className="truncate text-sm text-ink-soft">{verb.translation}</span>
       )}
     </Link>
   );
