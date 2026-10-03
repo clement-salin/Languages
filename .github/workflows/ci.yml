@@ -28,8 +28,8 @@ jobs:
     name: Types, tests, construction
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -60,7 +60,7 @@ jobs:
             echo "presente=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         if: steps.cle.outputs.presente == 'true'
 
       # Le runner est en x86_64, comme le VPS : pas d'émulation.
