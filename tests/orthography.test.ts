@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { modernize } from '../src/core/orthography';
+import { modernize } from '../src/domain/de/orthography';
 
 describe('nouvelle orthographe', () => {
   it.each([

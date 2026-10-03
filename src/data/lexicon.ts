@@ -1,9 +1,9 @@
 import dictionaryUrl from 'german-verbs-dict/dist/verbs.json?url';
-import { prepareDictionary } from './core/overrides';
-import { VerbIndex } from './core/search';
-import type { Dictionary } from './core/types';
-import { conjugate, lookupVerb, type Conjugation, type LookupResult } from './core/verb';
-import type { SavedVerb } from './storage';
+import { prepareDictionary } from '../domain/de/overrides';
+import { VerbIndex } from '../domain/de/search';
+import type { Dictionary } from '../domain/de/types';
+import { conjugate, lookupVerb, type Conjugation, type LookupResult } from '../domain/de/verb';
+import type { SavedVerb } from '../domain/de/saved-verb';
 
 /** Dictionnaire chargé + fonctions de recherche et de conjugaison. */
 export class Lexicon {
