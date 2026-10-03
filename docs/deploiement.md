@@ -6,7 +6,7 @@ L'app tourne dans un conteneur Docker `languages` (Node, sans dépendance), sur 
 | --- | --- |
 | Dossier sur le VPS | `/root/languages/` : `docker-compose.yml`, `.env` |
 | Conteneur | `languages`, port 8080, aucun port publié |
-| Données | volume Docker `languages-data` (base SQLite `languages.db`) |
+| Données | volume Docker `languages_languages-data` (base SQLite `languages.db`) — déclaré `languages-data` dans le compose, Docker le préfixe du nom du projet |
 | Image | construite par la CI ou sur le Mac, envoyée par SSH, jamais construite sur le serveur |
 
 Ce qui change par rapport à Verbheft : le conteneur `verbheft` ne faisait que servir des fichiers (`caddy:2-alpine`). Le nouveau conteneur sert les fichiers **et** la synchronisation (`/api/sync`), d'où un serveur Node et une base.
@@ -15,7 +15,11 @@ Ce qui change par rapport à Verbheft : le conteneur `verbheft` ne faisait que s
 
 ## Bascule depuis Verbheft (une seule fois)
 
-Tout ce qui suit se fait **par toi**, depuis le Mac : la session Claude n'a pas accès au VPS. L'ancien conteneur `verbheft` continue de servir le site jusqu'à l'étape 4, ce qui permet de revenir en arrière à tout moment.
+> **Étapes 1 à 4 faites le 03/10/2026** : le VPS sert Languages, l'ancien conteneur `verbheft` est arrêté et `/root/verbheft` reste en place pour le retour en arrière. **Restent les étapes 5, 6 et 7.** La marche à suivre est gardée pour mémoire, et pour le retour en arrière.
+>
+> Ce qui a coincé, à ne pas refaire : les étapes 3 et 4 ont été faites **avant** l'étape 2. Caddy pointait alors vers un conteneur `languages` qui n'existait pas encore, et le site a répondu 502 jusqu'au premier envoi. Puis le conteneur a refusé de démarrer : `.env` contenait le jeton seul, sans `SYNC_TOKEN=` devant (voir « En cas de problème »).
+
+Les étapes se font depuis le Mac, **dans l'ordre** : l'ancien conteneur `verbheft` continue de servir le site jusqu'à l'étape 4, ce qui permet de revenir en arrière à tout moment.
 
 ### 1. Le jeton de synchronisation, sur le VPS
 
@@ -31,6 +35,8 @@ chmod 600 .env
 
 Utiliser `nano`, pas `echo` : une commande `echo` resterait dans l'historique du shell.
 
+La ligne doit commencer par `SYNC_TOKEN=` : un jeton collé seul n'est rattaché à aucune variable, et le conteneur refuse de démarrer.
+
 ### 2. Premier envoi, depuis le Mac
 
 Docker Desktop doit être lancé sur le Mac.
@@ -42,6 +48,8 @@ Docker Desktop doit être lancé sur le Mac.
 Le script vérifie les types et les tests, construit l'image, envoie `docker-compose.yml` et l'image, puis démarre le conteneur `languages`. Le `curl` final répond encore avec l'ancien site : c'est normal, le proxy pointe toujours vers `verbheft`.
 
 ### 3. Pointer le domaine vers le nouveau conteneur
+
+**Seulement une fois le conteneur `languages` démarré** (`ssh root@46.225.70.60 'docker ps --filter name=languages'` doit le montrer `Up`) : sinon le site répond 502.
 
 Dans le Caddyfile du proxy, **modifier uniquement** le bloc `languages.clementsalin.com`, après une copie de sauvegarde :
 
@@ -136,3 +144,13 @@ puis remettre `reverse_proxy verbheft:80` dans le bloc du Caddyfile, valider et 
 ## Sauvegarde
 
 Pas encore automatisée. Le risque est limité : l'app est local-first, chaque appareil garde tout le carnet, et le serveur n'est qu'un point de rendez-vous. Une copie s'obtient depuis l'app (**Réglages → Sauvegarder (JSON)**). Pour automatiser, reprendre `.github/workflows/backup.yml` de batch-cooking.
+
+## En cas de problème
+
+| Symptôme | Cause et remède |
+| --- | --- |
+| Le site répond **502**, et `docker logs caddy-proxy-caddy-1` montre `lookup languages … server misbehaving` | Le conteneur `languages` n'existe pas ou est arrêté. `docker ps -a --filter name=languages` ; s'il manque, `./scripts/deploy.sh` depuis le Mac. |
+| `docker compose up` échoue avec `required variable SYNC_TOKEN is missing a value` | `.env` absent, ou jeton écrit sans `SYNC_TOKEN=` devant. Vérifier sans afficher le secret : `sed 's/=.*/=…/' /root/languages/.env` doit montrer `SYNC_TOKEN=…`. Corriger en gardant le même jeton : `sed -i '1s/^/SYNC_TOKEN=/' /root/languages/.env`. |
+| Le conteneur redémarre en boucle | `docker logs --tail 50 languages`. Image construite en arm64 ? Construire avec `--platform linux/amd64` (déjà dans `scripts/deploy.sh`). |
+| La CI est verte mais rien n'a changé en ligne | Étape « Mise en ligne » sautée : secrets `DEPLOY_SSH_KEY` / `DEPLOY_KNOWN_HOSTS` absents (étape 6). |
+| « La synchronisation n'est pas configurée » dans l'app | `docker exec languages printenv SYNC_TOKEN` ne doit pas être vide. |
