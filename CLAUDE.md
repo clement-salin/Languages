@@ -80,12 +80,12 @@ Avant de proposer un commit : `npm run typecheck && npm test`.
 | Domaine | `languages.clementsalin.com`, enregistrement `A` chez Cloudflare, **nuage gris** |
 | Sur le VPS | `/root/languages/` : `docker-compose.yml`, `.env` (`SYNC_TOKEN`) |
 | Conteneur | `languages`, image `languages:latest` (Node), port 8080, réseau Docker `web`, aucun port publié |
-| Données | volume `languages-data` (SQLite) |
+| Données | volume `languages_languages-data` sur le VPS (SQLite) — `languages-data` dans le compose, préfixé du nom du projet par Docker |
 | Proxy | conteneur `caddy-proxy-caddy-1`, config dans `/opt/caddy-proxy/Caddyfile` : `reverse_proxy languages:8080` |
 
 **Fusionner une PR sur `main` déploie** (`.github/workflows/ci.yml`) : vérification, construction de l'image, envoi par SSH avec une clé restreinte à `scripts/receive-deploy.sh` (installé sous `/root/receive-deploy-languages.sh`). Tant que les secrets `DEPLOY_SSH_KEY` et `DEPLOY_KNOWN_HOSTS` manquent, la CI saute le déploiement avec un avertissement. `./scripts/deploy.sh` fait la même chose depuis le Mac et envoie aussi `deploy/docker-compose.yml`, que la CI ne peut pas envoyer.
 
-**Bascule depuis Verbheft, retour en arrière, mise en place de la CI** : [`docs/deploiement.md`](./docs/deploiement.md). À la date du 03/10/2026, la bascule n'est **pas encore faite** : le VPS sert toujours l'ancien conteneur `verbheft` (`caddy:2-alpine`, `/root/verbheft/`).
+**Bascule depuis Verbheft, retour en arrière, mise en place de la CI** : [`docs/deploiement.md`](./docs/deploiement.md). **Bascule faite le 03/10/2026** : le VPS sert le conteneur `languages` ; l'ancien `verbheft` est arrêté, `/root/verbheft/` gardé pour le retour en arrière. Restent : jeton saisi sur chaque appareil, secrets de la CI (d'ici là, déployer avec `./scripts/deploy.sh`), dépublication de GitHub Pages — étapes 5 à 7 de `docs/deploiement.md`.
 
 **GitHub Pages est abandonné** (décidé le 03/10/2026) : l'app a besoin de son serveur, qu'une copie statique n'aurait pas, et la copie gardait son propre carnet. Le workflow ne publie plus ; reste à dépublier dans Settings → Pages.
 
@@ -105,6 +105,8 @@ Le VPS héberge aussi recettes (batch-cooking), batucada.app, maudmyers.com et l
 - Le dépôt GitHub est cloné en **HTTPS** : en SSH, la clé d'hôte de GitHub n'est pas connue sur le Mac. Pour un `git push` qui réclamerait un mot de passe : `gh auth setup-git`.
 - Un enregistrement DNS fraîchement créé peut rester introuvable sur le Mac (réponse négative en cache) alors que Cloudflare répond déjà. Vérifier avec `dig +short @1.1.1.1 languages.clementsalin.com`, et tester avec `curl --resolve languages.clementsalin.com:443:46.225.70.60 …`.
 - **Depuis un Mac à puce Apple, construire l'image avec `--platform linux/amd64`** (déjà dans `scripts/deploy.sh`) : sinon le conteneur refuse de démarrer sur le VPS.
+- **`/root/languages/.env` doit contenir `SYNC_TOKEN=<jeton>`**, pas le jeton seul : sinon `docker compose up` refuse de démarrer (incident du 03/10/2026). Ne jamais afficher ce fichier en clair ; le vérifier avec `sed 's/=.*/=…/'`.
+- **Pointer Caddy vers un conteneur seulement une fois celui-ci démarré** : sinon 502 (même incident). Le dépannage est dans `docs/deploiement.md`, section « En cas de problème ».
 - Le `fetch` de Node ne lit pas le proxy des sessions cloud ; sans objet ici tant que le serveur ne télécharge rien.
 
 ## Reste ouvert
