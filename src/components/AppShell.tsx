@@ -8,21 +8,18 @@ import { registerServiceWorker } from '../pwa';
 import { SettingsIcon, SyncIcon } from './icons';
 import { LanguageSwitch } from './LanguageSwitch';
 import { SECTIONS, type Section } from './sections';
+import { TabBar } from './TabBar';
 import { UpdateBanner } from './UpdateBanner';
 
 /**
  * Deux gabarits, pas un seul redimensionné (bascule à 1024 px) :
  * - grand écran : barre latérale permanente, la bascule de langue en tête ;
- * - téléphone : la bascule de langue en barre fixe sous le pouce.
- *
- * Les sections d'une langue n'apparaissent en onglets sur téléphone qu'à
- * partir de deux : un onglet unique serait un contrôle qui ne mène nulle
- * part ailleurs.
+ * - téléphone : une barre d'onglets sous le pouce (`TabBar`), qui porte les
+ *   sections, la bascule de langue et les réglages.
  */
 export function AppShell() {
   const { pathname } = useLocation();
   const lang = langFromPath(pathname);
-  const tabs = lang && SECTIONS[lang].length >= 2 ? SECTIONS[lang] : null;
   const [updateReady, setUpdateReady] = useState(false);
 
   useEffect(() => registerServiceWorker(() => setUpdateReady(true)), []);
@@ -42,25 +39,18 @@ export function AppShell() {
         <Link to="/" className="px-2 font-display text-2xl font-semibold text-ink no-underline">
           Languages
         </Link>
-        <LanguageSwitch current={lang} variant="rail" />
+        <LanguageSwitch current={lang} />
         {lang && <SectionNav lang={lang} />}
         <div className="mt-auto border-t border-line-strong pt-4">
           <SyncLink />
         </div>
       </aside>
 
-      <main
-        className={`min-w-0 flex-1 pb-[calc(var(--lang-bar-height)+5.5rem)] lg:pb-0 ${
-          tabs ? 'max-lg:[--page-top:0px]' : ''
-        }`}
-      >
-        {tabs && <SectionTabs sections={tabs} pathname={pathname} />}
+      <main className="min-w-0 flex-1 pb-[calc(var(--tab-bar-height)+5.5rem)] lg:pb-0">
         <Outlet />
       </main>
 
-      <div className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-page/95 px-4 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
-        <LanguageSwitch current={lang} variant="bar" />
-      </div>
+      <TabBar lang={lang} />
 
       {updateReady && <UpdateBanner />}
     </div>
@@ -98,34 +88,6 @@ function SectionLink({ section, active }: { section: Section; active: boolean })
       </span>
       {items && <span className="text-xs font-medium">{items.length}</span>}
     </Link>
-  );
-}
-
-/**
- * Onglets des sections sur téléphone, en haut de l'écran : seulement quand
- * la langue en compte au moins deux.
- */
-function SectionTabs({ sections, pathname }: { sections: Section[]; pathname: string }) {
-  return (
-    <nav aria-label="Sections" className="px-5 pt-[max(0.75rem,env(safe-area-inset-top))] lg:hidden">
-      <div className="flex rounded-[10px] bg-track p-[3px]">
-        {sections.map((section) => {
-          const active = section.matches(pathname);
-          return (
-            <Link
-              key={section.to}
-              to={section.to}
-              aria-current={active ? 'page' : undefined}
-              className={`flex h-9 flex-1 items-center justify-center rounded-lg text-sm no-underline ${
-                active ? 'bg-surface font-semibold text-accent-text shadow-sm' : 'text-ink-3'
-              }`}
-            >
-              {section.label}
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
   );
 }
 

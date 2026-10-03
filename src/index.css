@@ -62,16 +62,13 @@
 }
 
 /*
- * Hauteur de la barre de langues sur téléphone, encoche comprise. La barre,
+ * Hauteur de la barre d'onglets sur téléphone, encoche comprise. La barre,
  * le bouton flottant et la marge basse du contenu lisent ce même jeton.
  */
 :root {
-  /*
-   * Marge haute d'une page : l'encoche, sauf quand les onglets de section
-   * l'ont déjà prise en charge au-dessus (AppShell la remet alors à zéro).
-   */
+  /* Marge haute d'une page sur téléphone : l'encoche. */
   --page-top: env(safe-area-inset-top);
-  --lang-bar-height: calc(4.5rem + env(safe-area-inset-bottom));
+  --tab-bar-height: calc(3.75rem + env(safe-area-inset-bottom));
 }
 
 html {

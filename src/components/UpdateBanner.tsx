@@ -9,7 +9,7 @@ export function UpdateBanner() {
   return (
     <div
       role="status"
-      className="fixed inset-x-4 bottom-[calc(var(--lang-bar-height)+1rem)] z-30 mx-auto flex max-w-md items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3 shadow-lg lg:right-6 lg:bottom-6 lg:left-auto lg:mx-0"
+      className="fixed inset-x-4 bottom-[calc(var(--tab-bar-height)+1rem)] z-30 mx-auto flex max-w-md items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3 shadow-lg lg:right-6 lg:bottom-6 lg:left-auto lg:mx-0"
     >
       <p className="m-0 flex-1 text-sm text-ink-2">Une nouvelle version est disponible.</p>
       <button

@@ -10,7 +10,7 @@ export function FloatingAction({ label, onClick }: { label: string; onClick: () 
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="fixed right-5 bottom-[calc(var(--lang-bar-height)+1rem)] z-20 flex size-14 cursor-pointer items-center justify-center rounded-full border-0 bg-accent text-white shadow-float lg:hidden"
+      className="fixed right-5 bottom-[calc(var(--tab-bar-height)+1rem)] z-20 flex size-14 cursor-pointer items-center justify-center rounded-full border-0 bg-accent text-white shadow-float lg:hidden"
     >
       <PlusIcon size={24} />
     </button>
