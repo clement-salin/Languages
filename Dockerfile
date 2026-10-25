@@ -11,6 +11,11 @@ RUN npm run build
 FROM node:22-alpine
 WORKDIR /app
 ENV NODE_ENV=production PORT=8080 HOST=0.0.0.0
+
+# npm et yarn ne servent pas à l'exécution (CMD node …) : leurs composants
+# internes portaient des failles HIGH signalées par Trivy.
+RUN apk upgrade --no-cache && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx /opt/yarn-* /usr/local/bin/yarn /usr/local/bin/yarnpkg
+
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/dist-server/main.js ./dist-server/main.js
 
