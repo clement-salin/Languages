@@ -9,7 +9,7 @@
 
 import { timingSafeEqual } from 'node:crypto';
 import type { Plugin } from 'vite';
-import type { SyncRequest } from '../src/domain/sync.ts';
+import { parseSyncRequest } from '../server/sync-request.ts';
 import type { SyncStore } from '../server/sync-store.ts';
 import { parseTranslateRequest, translate, TRANSLATE_ROUTE } from '../server/translate.ts';
 
@@ -77,9 +77,10 @@ export function syncApi(): Plugin {
           // serveur de développement tant que personne ne synchronise.
           void import('../server/sync-store.ts')
             .then(({ defaultDatabaseFile, openSyncStore }) => {
-              const body = JSON.parse(Buffer.concat(chunks).toString('utf8')) as SyncRequest;
+              const body = parseSyncRequest(JSON.parse(Buffer.concat(chunks).toString('utf8')));
+              if (typeof body === 'string') return send(400, { error: body });
               store ??= openSyncStore(process.env['DATABASE_FILE'] ?? defaultDatabaseFile());
-              send(200, store.exchange(body.since ?? null, body.collections ?? {}));
+              send(200, store.exchange(body.since, body.collections));
             })
             .catch((error: unknown) => {
               server.config.logger.error(`[sync] ${(error as Error).message}`);

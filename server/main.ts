@@ -14,7 +14,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { extname, join, normalize, resolve } from 'node:path';
 import { defaultDatabaseFile, openSyncStore, type SyncStore } from './sync-store.ts';
 import { parseTranslateRequest, translate, TRANSLATE_ROUTE } from './translate.ts';
-import type { SyncRequest } from '../src/domain/sync.ts';
+import { parseSyncRequest } from './sync-request.ts';
 
 const PORT = Number(process.env['PORT'] ?? 8080);
 const HOST = process.env['HOST'] ?? '0.0.0.0';
@@ -67,6 +67,39 @@ const MIME: Record<string, string> = {
   '.webmanifest': 'application/manifest+json',
 };
 
+/*
+ * En-têtes de sécurité, sur toutes les réponses.
+ *
+ * Le jeton de synchronisation est rangé dans le navigateur : un script
+ * injecté pourrait le lire. React échappe déjà tout ce qu'il affiche ; la
+ * politique de contenu est le second rideau — seuls les scripts du site
+ * s'exécutent, et rien ne part ailleurs que vers ce serveur. Google Fonts
+ * est la seule origine extérieure (feuille de style et polices).
+ */
+const SECURITY_HEADERS: Record<string, string> = {
+  'content-security-policy': [
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self' https://fonts.googleapis.com",
+    'font-src https://fonts.gstatic.com',
+    "img-src 'self' data:",
+    "connect-src 'self'",
+    "manifest-src 'self'",
+    "worker-src 'self'",
+    "object-src 'none'",
+    "base-uri 'none'",
+    "form-action 'self'",
+    // Jamais affichée dans le cadre d'un autre site (clic détourné).
+    "frame-ancestors 'none'",
+  ].join('; '),
+  'x-content-type-options': 'nosniff',
+  'referrer-policy': 'no-referrer',
+  'cross-origin-opener-policy': 'same-origin',
+  // Le site n'existe qu'en HTTPS (Caddy) ; le navigateur ne tentera plus le HTTP.
+  'strict-transport-security': 'max-age=31536000',
+  'permissions-policy': 'camera=(), microphone=(), geolocation=()',
+};
+
 function sendJson(res: ServerResponse, status: number, body: unknown): void {
   res.writeHead(status, { 'content-type': 'application/json; charset=utf-8' });
   res.end(JSON.stringify(body));
@@ -109,6 +142,7 @@ async function serveFile(res: ServerResponse, filePath: string, immutable: boole
 }
 
 async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  for (const [name, value] of Object.entries(SECURITY_HEADERS)) res.setHeader(name, value);
   const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
 
   if (url.pathname === '/api/sync') {
@@ -127,19 +161,18 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
       return;
     }
 
-    let body: SyncRequest;
+    let body;
     try {
-      body = (await readJson(req)) as SyncRequest;
+      body = parseSyncRequest(await readJson(req));
     } catch {
-      sendJson(res, 400, { error: 'Corps de requête illisible.' });
-      return;
+      body = 'Corps de requête illisible.';
     }
-    if (!body?.collections || typeof body.collections !== 'object') {
-      sendJson(res, 400, { error: 'Corps de requête incomplet.' });
+    if (typeof body === 'string') {
+      sendJson(res, 400, { error: body });
       return;
     }
 
-    sendJson(res, 200, syncStore().exchange(body.since ?? null, body.collections));
+    sendJson(res, 200, syncStore().exchange(body.since, body.collections));
     return;
   }
 
