@@ -30,6 +30,15 @@ export interface SyncStore {
   close(): void;
 }
 
+/*
+ * Une date trop loin dans le futur l'emporterait sur toutes les
+ * modifications à venir (« le dernier écrit gagne ») : la fiche serait figée
+ * pour de bon. Un jour de marge couvre une horloge d'appareil mal réglée ;
+ * au-delà, la modification est ignorée par le serveur et reste sur
+ * l'appareil qui l'a faite.
+ */
+const MAX_CLOCK_AHEAD_MS = 24 * 60 * 60 * 1000;
+
 export function openSyncStore(file: string): SyncStore {
   mkdirSync(dirname(resolve(file)), { recursive: true });
   const db = new DatabaseSync(file);
@@ -92,6 +101,8 @@ export function openSyncStore(file: string): SyncStore {
   return {
     exchange(since, incoming) {
       const now = clock();
+      const latest = Date.parse(now) + MAX_CLOCK_AHEAD_MS;
+      const fromTheFuture = (date: string): boolean => !(Date.parse(date) <= latest);
 
       db.exec('BEGIN');
       try {
@@ -100,12 +111,14 @@ export function openSyncStore(file: string): SyncStore {
           if (!payload) continue;
 
           for (const record of payload.changes ?? []) {
+            if (fromTheFuture(record.updatedAt)) continue;
             const stored = readOne.get(collection, record.id) as { updated_at: string } | undefined;
             if (!acceptsIncoming(stored && { updatedAt: stored.updated_at }, record)) continue;
             upsert.run(collection, record.id, JSON.stringify(record), record.updatedAt);
           }
 
           for (const tombstone of payload.deletions ?? []) {
+            if (fromTheFuture(tombstone.deletedAt)) continue;
             const known = readDeletion.get(collection, tombstone.id) as
               | { deleted_at: string }
               | undefined;

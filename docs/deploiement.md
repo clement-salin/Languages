@@ -111,8 +111,23 @@ cat ~/.ssh/languages-deploy.pub
 Sur le VPS, ajouter à `/root/.ssh/authorized_keys` une ligne qui commence par la restriction, suivie de la clé publique affichée :
 
 ```
-command="/root/receive-deploy-languages.sh",no-port-forwarding,no-agent-forwarding,no-pty,no-X11-forwarding ssh-ed25519 AAAA… languages-ci
+restrict,command="/root/receive-deploy-languages.sh" ssh-ed25519 AAAA… languages-ci
 ```
+
+`restrict` coupe tout ce qu'une clé peut faire en plus d'exécuter sa commande (redirections de ports, agent, terminal, X11…), y compris ce qu'OpenSSH ajouterait dans une version future.
+
+Le script refuse toute archive qui nommerait une autre image que `languages:latest` (audit du 25/10/2026) : sans ce contrôle, la clé, si elle fuitait, pourrait remplacer l'image d'un autre site du VPS. Il lui faut `python3`, présent d'office sur Ubuntu.
+
+#### Mettre à jour le script sur le VPS
+
+`scripts/receive-deploy.sh` n'est pas envoyé par la CI : à chaque modification, le recopier depuis le Mac (dépôt à jour) :
+
+```bash
+scp scripts/receive-deploy.sh root@46.225.70.60:/root/receive-deploy-languages.sh
+ssh root@46.225.70.60 'chmod +x /root/receive-deploy-languages.sh && python3 --version'
+```
+
+Puis, dans `/root/.ssh/authorized_keys` (avec `nano`), remplacer en tête de la ligne `languages-ci` les options `command="…",no-port-forwarding,…,no-X11-forwarding` par `restrict,command="/root/receive-deploy-languages.sh"`. Vérifier ensuite en relançant le workflow (Actions → Vérification et déploiement → Run workflow).
 
 Puis sur GitHub, dépôt Languages → **Settings → Secrets and variables → Actions → New repository secret** :
 

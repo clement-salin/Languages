@@ -57,4 +57,22 @@ describe('magasin de synchronisation', () => {
       previous = now;
     }
   });
+
+  it('ignore une date trop loin dans le futur, qui figerait la fiche', () => {
+    const store = freshStore();
+    const future = '9999-12-31T00:00:00.000Z';
+    store.exchange(null, {
+      deVerbs: { changes: [verb('fahren', future), verb('gehen', T1)], deletions: [{ id: 'gehen', deletedAt: future }] },
+    });
+    const { collections } = store.exchange(null, {});
+    expect(collections.deVerbs?.changes.map((r) => r.id)).toEqual(['gehen']);
+    expect(collections.deVerbs?.deletions).toEqual([]);
+  });
+
+  it("accepte une horloge d'appareil un peu en avance", () => {
+    const store = freshStore();
+    const soon = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    store.exchange(null, { deVerbs: { changes: [verb('fahren', soon)], deletions: [] } });
+    expect(store.exchange(null, {}).collections.deVerbs?.changes).toHaveLength(1);
+  });
 });
